@@ -111,6 +111,24 @@ def build_model(cfg: dict):
     return processor, model
 
 
+class CastingSeq2SeqTrainer(Seq2SeqTrainer):
+    """Seq2SeqTrainer that feeds the encoder in the dtype of its weights during evaluation.
+
+    Recent transformers load whisper-large-v3-turbo in fp16. Training runs under autocast, but
+    `generate` during evaluation does not, so float32 log-mel features reach an fp16 conv layer
+    ("Input type (float) and bias type (c10::Half) should be the same").
+    """
+
+    def prediction_step(self, model, inputs, prediction_loss_only, ignore_keys=None, **kwargs):
+        features = inputs.get("input_features")
+        if features is not None:
+            base = model.get_base_model() if hasattr(model, "get_base_model") else model
+            dtype = base.model.encoder.conv1.weight.dtype
+            if features.dtype != dtype:
+                inputs = {**inputs, "input_features": features.to(dtype)}
+        return super().prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys, **kwargs)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", type=Path, required=True)
@@ -169,7 +187,7 @@ def main() -> None:
         dataloader_num_workers=2,
     )
 
-    trainer = Seq2SeqTrainer(
+    trainer = CastingSeq2SeqTrainer(
         args=training_args,
         model=model,
         train_dataset=data["train"],
