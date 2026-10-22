@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """WER / CER of any Whisper checkpoint (Hub id or local folder) on a split of the dataset.
 
-    python evaluate.py --model openai/whisper-small --data data/cv_lb --split test
-    python evaluate.py --model runs/turbo-lora/merged --data data/cv_lb --split test
+    python evaluate.py --model openai/whisper-small --data data/fleurs_lb --split test
+    python evaluate.py --model runs/turbo-lora/merged --data data/fleurs_lb --split test
 
 Writes results/<model-name>.<split>.json and appends a row to results/results.md so the
 « before / after » table of the model card is generated, not typed.
@@ -55,7 +55,7 @@ def transcribe_dataset(model_id: str, ds, language: str, batch_size: int, device
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
-    ap.add_argument("--data", type=Path, default=Path("data/cv_lb"))
+    ap.add_argument("--data", type=Path, default=Path("data/fleurs_lb"))
     ap.add_argument("--split", default="test")
     ap.add_argument("--language", default="lb")
     ap.add_argument("--batch-size", type=int, default=16)

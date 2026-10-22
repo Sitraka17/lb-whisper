@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Benchmark several models on the same test set, clean and WhatsApp-degraded.
 
-    python benchmark.py --data data/cv_lb --models openai/whisper-small openai/whisper-large-v3-turbo \
+    python benchmark.py --data data/fleurs_lb --models openai/whisper-small openai/whisper-large-v3-turbo \
         unilux/whisper-small-v1-luxembourgish runs/turbo-lora/merged --max-samples 300
 
 « Degraded » re-encodes every clip through ffmpeg as 16 kbit/s mono Opus, the codec and
@@ -45,7 +45,7 @@ def degrade_whatsapp(array: np.ndarray, sr: int, bitrate: str = "16k") -> np.nda
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", type=Path, default=Path("data/cv_lb"))
+    ap.add_argument("--data", type=Path, default=Path("data/fleurs_lb"))
     ap.add_argument("--split", default="test")
     ap.add_argument("--models", nargs="+", required=True)
     ap.add_argument("--language", default="lb")

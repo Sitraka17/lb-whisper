@@ -23,9 +23,11 @@ Luxembourgish ASR is **not** empty ground. Before writing a line of code, know t
   open dataset *« Dataset for finetuning a Luxembourgish Automatic Speech Recognition »* on data.public.lu.
 - Individual fine-tunes: `pgilles/whisper-medium-v2-lb_cased_01` (no longer public: 401 on 22/10/2026), `Tun-Wellens/whisper-medium-lb-*`,
   `Lemswasabi/wav2vec2-large-xlsr-53-842h-luxembourgish-14h`.
-- **Mozilla Common Voice** has a Luxembourgish (`lb`) locale: a few dozen hours, crowd-sourced, CC0. Since October 2025
-  the datasets are distributed only through Mozilla Data Collective (the Hugging Face repo
-  `mozilla-foundation/common_voice_17_0` is now a pointer, checked 22/10/2026): download the `lb` archive there.
+- **Google FLEURS** (`google/fleurs`, config `lb_lu`): read Luxembourgish, CC-BY-4.0, about 2,500 / 400 / 930
+  utterances in train / dev / test. It is the open training and test data of this project.
+- **Mozilla Common Voice has no Luxembourgish data**: `lb` is not in any scripted-speech release from 17.0 to
+  27.0 (checked on 22/10/2026 in the official release statistics).
+- Other Hugging Face sets labelled Luxembourgish are CC-BY-NC-ND (no derivatives) or have no licence: not used.
 
 So the claim is **not** « first Luxembourgish Whisper ». The claim, and what the model card measures, is:
 
@@ -33,8 +35,8 @@ So the claim is **not** « first Luxembourgish Whisper ». The claim, and what t
    `finetune/` on a free GPU tier, every hyper-parameter in a YAML file.
 2. **A small model that runs on CPU**: `whisper-small` full fine-tune and `large-v3-turbo` + LoRA,
    exported to CTranslate2 int8 for `faster-whisper`. Prior work targets GPU-class medium/large models.
-3. **A benchmark nobody has published**: base Whisper vs. uni.lu vs. ZLS vs. this model, on Common Voice
-   `lb` test *and* on degraded WhatsApp-style audio, with WER **and** processing time per minute of audio.
+3. **A benchmark nobody has published**: base Whisper vs. uni.lu vs. ZLS vs. this model, on the FLEURS
+   `lb_lu` test split *and* on degraded WhatsApp-style audio, with WER **and** processing time per minute of audio.
 4. **A deployable, privacy-first application on top**: the Space.
 
 That is the story you can defend in an interview: what you chose, what you measured, what you learnt.
@@ -44,10 +46,9 @@ That is the story you can defend in an interview: what you chose, what you measu
 ```bash
 # 1. Fine-tune (Colab / Kaggle, see finetune/README.md)
 pip install -r finetune/requirements.txt
-python finetune/make_manifest.py --root data/zls --out data/zls/manifest.jsonl   # ZLS set from data.public.lu
-python finetune/prepare_data.py --source hf --extra data/zls/manifest.jsonl --out data/cv_lb
+python finetune/prepare_data.py --out data/fleurs_lb   # FLEURS lb_lu from the Hub, no login
 python finetune/train.py --config finetune/configs/turbo-lora.yaml
-python finetune/evaluate.py --model runs/turbo-lora/merged --data data/cv_lb --split test
+python finetune/evaluate.py --model runs/turbo-lora/merged --data data/fleurs_lb --split test
 python finetune/export.py --run runs/turbo-lora --push <hf-user>/whisper-large-v3-turbo-lb
 
 # 2. Run the sovereign meeting-notes app locally (CPU is fine)
@@ -64,7 +65,7 @@ pip install pytest pyyaml && pytest tests/
 
 | Source | Licence | Use here |
 |---|---|---|
-| Mozilla Common Voice `lb` | CC0 | train / dev / test |
+| Google FLEURS `lb_lu` | CC-BY-4.0 | train / dev / test |
 | ZLS fine-tuning dataset (data.public.lu) | **Conflicting** (checked 22/10/2026): data.public.lu says MIT (licence field « Other (Open) »), the linked Hugging Face card `Lemswasabi/luxembourgish-asr-rtl-lu` says CC-BY-NC-ND-4.0, and the audio is RTL broadcast material fetched from Google Drive | **not used** for the published weights until ZLS confirms the licence in writing; `finetune/make_manifest.py` stays ready |
 | RTL / uni.lu corpora | copyright, research only | **not used** |
 

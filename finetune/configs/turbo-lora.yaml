@@ -1,10 +1,10 @@
 # Whisper large-v3-turbo + LoRA. Fits a 16 GB T4 (Colab free) in fp16 with gradient checkpointing.
-# ~10 GPU hours for 3 epochs on Common Voice lb; stop earlier if dev WER plateaus.
+# FLEURS lb_lu is small (~2,500 utterances): about 1 GPU hour for 3 epochs; stop earlier if dev WER plateaus.
 run_name: turbo-lora
 base_model: openai/whisper-large-v3-turbo
 language: luxembourgish          # Whisper language name; token <|lb|>
 task: transcribe
-data_dir: data/cv_lb             # output of prepare_data.py
+data_dir: data/fleurs_lb             # output of prepare_data.py
 output_dir: runs/turbo-lora
 
 lora:

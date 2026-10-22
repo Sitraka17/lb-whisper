@@ -6,15 +6,11 @@ except the final `git push` of results.
 ## 1. Data
 
 ```bash
-# Accept the Common Voice 17 terms on the dataset page once, then:
-huggingface-cli login
-python prepare_data.py --source hf --out data/cv_lb
-# Alternative: a manual download from Mozilla → --source cv-dir --cv-dir /path/to/cv-corpus-17.0-lb
-# ZLS set from data.public.lu (download the archive into data/zls, check its licence on the page):
-python make_manifest.py --root data/zls --out data/zls/manifest.jsonl --source zls --split train
-python prepare_data.py --source hf --extra data/zls/manifest.jsonl --out data/cv_lb
-# The manifest is one JSON line per clip: {"audio": "...", "text": "...", "split": "train", "source": "zls"}.
-# Test and validation stay pure Common Voice, so the WER is comparable with everybody else's.
+# Google FLEURS, Luxembourgish (lb_lu), CC-BY-4.0, no login needed:
+python prepare_data.py --out data/fleurs_lb
+# Extra data only if its licence allows a published model (see make_manifest.py for the JSONL format):
+# python prepare_data.py --extra data/other/manifest.jsonl --out data/fleurs_lb
+# Test and validation stay pure FLEURS, so the WER is comparable with everybody else's.
 ```
 
 `prepare_data.py` parses the TSVs and tarballs itself (no dataset loading script), writes a
@@ -25,8 +21,8 @@ python prepare_data.py --source hf --extra data/zls/manifest.jsonl --out data/cv
 Measure zero-shot Whisper **before** training, otherwise « after » means nothing:
 
 ```bash
-python evaluate.py --model openai/whisper-large-v3-turbo --data data/cv_lb --split test
-python evaluate.py --model openai/whisper-small           --data data/cv_lb --split test
+python evaluate.py --model openai/whisper-large-v3-turbo --data data/fleurs_lb --split test
+python evaluate.py --model openai/whisper-small           --data data/fleurs_lb --split test
 ```
 
 ## 3. Train
@@ -45,8 +41,8 @@ Keep `runs/` on Google Drive (`--output_dir` in the YAML) or lose it with the VM
 
 ```bash
 python export.py --run runs/turbo-lora                     # merged/ + ct2-int8/
-python evaluate.py --model runs/turbo-lora/merged --data data/cv_lb --split test
-python benchmark.py --data data/cv_lb --max-samples 300 --models \
+python evaluate.py --model runs/turbo-lora/merged --data data/fleurs_lb --split test
+python benchmark.py --data data/fleurs_lb --max-samples 300 --models \
     openai/whisper-large-v3-turbo openai/whisper-small \
     unilux/whisper-medium-v1-luxembourgish ZLSCompLing/Whisper-Large-V3-Turbo-Luxembourgish \
     runs/turbo-lora/merged runs/small-full/merged
@@ -68,7 +64,7 @@ python export.py --run runs/turbo-lora --card results/model_card.md \
 | whisper-small full fine-tune as second run | the one that runs in real time on a laptop CPU | small + LoRA (less capacity to shift the language prior) |
 | own normaliser instead of Whisper's | Whisper's splits `d'Kanner` in two tokens and inflates WER on correct output | jiwer's default transforms (same problem) |
 | WhatsApp-degraded test condition | the real input of a Luxembourg SME is a voice note, not a studio clip | adding noise (less representative than codec loss) |
-| ZLS data in train only, never in dev/test | more hours; the test set stays the public Common Voice split anyone can compare with | ZLS in the test set (numbers nobody can reproduce) |
+| FLEURS only, test split untouched | the only open Luxembourgish speech set with a licence that allows a published model; the test split is public, anyone can compare | ZLS / RTL sets (CC-BY-NC-ND or research-only: unusable weights) |
 | no RTL / uni.lu audio | licence is research-only; the published model must be usable commercially | more data, unusable weights |
 | CTranslate2 int8 export | 3-4× faster on CPU than Transformers fp32, same WER within noise | ONNX (more work, no gain for Whisper) |
 

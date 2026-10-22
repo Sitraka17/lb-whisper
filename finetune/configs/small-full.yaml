@@ -3,7 +3,7 @@ run_name: small-full
 base_model: openai/whisper-small
 language: luxembourgish
 task: transcribe
-data_dir: data/cv_lb
+data_dir: data/fleurs_lb
 output_dir: runs/small-full
 
 lora:

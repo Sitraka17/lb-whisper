@@ -6,7 +6,7 @@ library_name: transformers
 pipeline_tag: automatic-speech-recognition
 base_model: openai/whisper-large-v3-turbo
 datasets:
-  - mozilla-foundation/common_voice_17_0
+  - google/fleurs
 metrics:
   - wer
   - cer
@@ -22,9 +22,9 @@ model-index:
           type: automatic-speech-recognition
           name: Automatic Speech Recognition
         dataset:
-          name: Common Voice 17.0 (lb, test)
-          type: mozilla-foundation/common_voice_17_0
-          config: lb
+          name: FLEURS (lb_lu, test)
+          type: google/fleurs
+          config: lb_lu
           split: test
         metrics:
           - type: wer
@@ -39,7 +39,7 @@ with a reproducible recipe: <https://github.com/Sitraka17/lb-whisper>.
 
 ## Results
 
-Word error rate on Common Voice 17.0 `lb` test (__N_TEST__ utterances), text normalised with the
+Word error rate on FLEURS `lb_lu` test (__N_TEST__ utterances), text normalised with the
 project's Luxembourgish normaliser (apostrophes inside words kept, case and punctuation dropped):
 
 | model | WER % clean | WER % WhatsApp-degraded | s / audio-min (CPU, CT2 int8) |
@@ -55,10 +55,9 @@ Every number above comes from `finetune/benchmark.py`; rerun it to reproduce.
 
 | source | licence | split | utterances | hours |
 |---|---|---|---:|---:|
-| Common Voice 17.0 `lb` | CC0 | train + dev | __N_TRAIN__ | __H_TRAIN__ |
-| ZLS « Dataset for finetuning a Luxembourgish ASR » (data.public.lu) | __ZLS_LICENCE__ | train | __N_ZLS__ | __H_ZLS__ |
+| Google FLEURS `lb_lu` | CC-BY-4.0 | train + dev | __N_TRAIN__ | __H_TRAIN__ |
 
-No RTL, no uni.lu, no scraped audio. The Common Voice test split was never seen in training.
+No RTL, no uni.lu, no ZLS, no scraped audio. The FLEURS test split was never seen in training. The uni.lu and ZLS models in the table may have seen FLEURS sentences during their own training: their numbers are indicative.
 
 ## Training
 
@@ -84,12 +83,12 @@ segments, info = model.transcribe("meeting.wav", language="lb", vad_filter=True)
 
 ## Limitations
 
-- Common Voice is read speech, one sentence at a time: spontaneous conversation, overlapping speakers
+- FLEURS is read speech (Wikipedia sentences), one sentence at a time, and small (a few hours): spontaneous conversation, overlapping speakers
   and code-switching (Luxembourgish ↔ French ↔ German in the same sentence) are under-represented.
 - Dialectal variation and the *Eifeler Regel* (n-deletion) are learnt only as far as the data shows them.
-- Numbers, dates and proper nouns follow the written conventions of the Common Voice sentences.
+- Numbers, dates and proper nouns follow the written conventions of the FLEURS sentences.
 - Evaluated on one test set; a model that wins here can lose on your audio. Run `benchmark.py` on yours.
 
 ## Citation
 
-If you use this model, cite the Common Voice corpus (Ardila et al., 2020) and link this card.
+If you use this model, cite FLEURS (Conneau et al., 2022) and link this card.
