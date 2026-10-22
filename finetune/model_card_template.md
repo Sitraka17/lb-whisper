@@ -42,7 +42,7 @@ with a reproducible recipe: <https://github.com/Sitraka17/lb-whisper>.
 Word error rate on FLEURS `lb_lu` test (__N_TEST__ utterances), text normalised with the
 project's Luxembourgish normaliser (apostrophes inside words kept, case and punctuation dropped):
 
-| model | WER % clean | WER % WhatsApp-degraded | s / audio-min (CPU, CT2 int8) |
+| model | WER % clean | WER % WhatsApp-degraded | s / audio-min (__GPU__, Transformers) |
 |---|---:|---:|---:|
 | openai/whisper-large-v3-turbo (zero-shot) | __WER_BEFORE__ | __WER_BEFORE_DEG__ | n/a |
 | **this model** | **__WER_AFTER__** | __WER_AFTER_DEG__ | __SPEED__ |
