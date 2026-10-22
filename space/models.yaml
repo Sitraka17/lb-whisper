@@ -1,0 +1,16 @@
+# Models offered in the app. Any Hub Whisper repo works: CTranslate2 repos load directly,
+# Transformers repos are converted to int8 on first use (needs torch + transformers installed).
+# Order = order in the dropdown; the first one is the default.
+models:
+  - label: "Whisper large-v3-turbo · Luxembourgish fine-tune (this project)"
+    repo: "SitrakaForler/whisper-large-v3-turbo-lb-ct2"
+    languages: [lb, fr, de, en]
+  - label: "Whisper small · Luxembourgish fine-tune (fast, CPU)"
+    repo: "SitrakaForler/whisper-small-lb-ct2"
+    languages: [lb, fr, de, en]
+  - label: "Whisper large-v3-turbo (OpenAI, zero-shot)"
+    repo: "deepdml/faster-whisper-large-v3-turbo-ct2"
+    languages: [auto, lb, fr, de, en]
+  - label: "Whisper small (OpenAI, zero-shot)"
+    repo: "Systran/faster-whisper-small"
+    languages: [auto, lb, fr, de, en]

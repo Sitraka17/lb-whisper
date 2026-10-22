@@ -1,0 +1,28 @@
+# Data and model weights never go in git (HF Hub carries them)
+data/
+datasets/
+runs/
+checkpoints/
+merged/
+ct2/
+results/*.jsonl
+*.mp3
+*.wav
+*.m4a
+*.ogg
+*.opus
+*.flac
+*.bin
+*.safetensors
+*.pt
+# Secrets
+.env
+.env.*
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+# Gradio
+space/flagged/
+space/.gradio/

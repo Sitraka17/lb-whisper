@@ -1,0 +1,38 @@
+# Whisper large-v3-turbo + LoRA. Fits a 16 GB T4 (Colab free) in fp16 with gradient checkpointing.
+# ~10 GPU hours for 3 epochs on Common Voice lb; stop earlier if dev WER plateaus.
+run_name: turbo-lora
+base_model: openai/whisper-large-v3-turbo
+language: luxembourgish          # Whisper language name; token <|lb|>
+task: transcribe
+data_dir: data/cv_lb             # output of prepare_data.py
+output_dir: runs/turbo-lora
+
+lora:
+  enabled: true
+  r: 32
+  alpha: 64
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, out_proj, fc1, fc2]
+
+train:
+  num_train_epochs: 3
+  learning_rate: 1.0e-4          # LoRA likes 10x the full-FT rate
+  warmup_steps: 100
+  per_device_train_batch_size: 8
+  gradient_accumulation_steps: 2
+  per_device_eval_batch_size: 8
+  fp16: true                     # T4 has no bf16; switch to bf16 on A100 / L4
+  gradient_checkpointing: true
+  eval_strategy: steps
+  eval_steps: 250
+  save_steps: 250
+  logging_steps: 25
+  save_total_limit: 2
+  max_eval_samples: 400          # dev subset during training; full test set in evaluate.py
+  eval_generate: true            # WER during training (set false if generation under PEFT misbehaves)
+  generation_max_length: 225
+  seed: 42
+
+filters:
+  max_audio_seconds: 30.0
+  max_label_tokens: 448

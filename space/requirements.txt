@@ -1,0 +1,12 @@
+gradio>=5.0
+faster-whisper>=1.1
+ctranslate2>=4.4
+huggingface_hub>=0.25
+pyyaml>=6.0
+# Needed only to convert a plain Transformers Whisper repo to CTranslate2 on first use.
+transformers>=4.46
+torch>=2.3
+# Optional: speaker diarization (set HF_TOKEN after accepting the pyannote model terms).
+pyannote.audio>=4.0
+# In-process LLM summary (Qwen2.5-1.5B-Instruct GGUF by default, extractive fallback if it fails).
+llama-cpp-python>=0.3
