@@ -1,4 +1,4 @@
-# Whisper small, full fine-tune. The CPU-friendly candidate (244 M params, ~1 s per 10 s of audio on a laptop CPU with CT2 int8).
+# Whisper small, full fine-tune (244 M params). Never trained in this project: speed and accuracy not measured.
 run_name: small-full
 base_model: openai/whisper-small
 language: luxembourgish
@@ -19,8 +19,8 @@ train:
   fp16: true
   gradient_checkpointing: true
   eval_strategy: steps
-  eval_steps: 250
-  save_steps: 250
+  eval_steps: 157                # one epoch: ceil(2,502 utt / batch 16)
+  save_steps: 157
   logging_steps: 25
   save_total_limit: 2
   max_eval_samples: 400
