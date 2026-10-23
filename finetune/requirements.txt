@@ -4,7 +4,6 @@ transformers>=4.46
 datasets[audio]>=3.0
 accelerate>=1.0
 peft>=0.13
-evaluate>=0.4
 jiwer>=3.0
 huggingface_hub>=0.25
 soundfile>=0.12
