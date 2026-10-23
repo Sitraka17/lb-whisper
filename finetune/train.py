@@ -5,14 +5,15 @@
     python train.py --config configs/small-full.yaml --max-train-samples 2000   # smoke test
 
 Everything that matters is in the YAML: base model, LoRA or not, batch sizes, steps.
-Resumable (`--resume`), logs to TensorBoard, writes the dev WER history to
-<output_dir>/trainer_state.json. The adapter (or the full model) lands in
+Resumable (`--resume`), logs to TensorBoard, writes the runtime, the GPU name and the dev WER
+history to <output_dir>/train_metrics.json (read by fill_card.py). The adapter (or the full model) lands in
 <output_dir>/final; export.py merges and converts it.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -196,7 +197,20 @@ def main() -> None:
         compute_metrics=compute_metrics if eval_generate else None,
         processing_class=processor.feature_extractor,
     )
-    trainer.train(resume_from_checkpoint=args.resume or None)
+    result = trainer.train(resume_from_checkpoint=args.resume or None)
+    state = trainer.state
+    metrics = {
+        "train_runtime": result.metrics.get("train_runtime"),
+        "train_loss": result.metrics.get("train_loss", result.training_loss),
+        "global_step": state.global_step,
+        "epochs": state.epoch,
+        "best_model_checkpoint": state.best_model_checkpoint,
+        "best_metric": state.best_metric,
+        "metric_for_best_model": training_args.metric_for_best_model,
+        "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+        "log_history": state.log_history,
+    }
+    (out_dir / "train_metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
 
     final = out_dir / "final"
     trainer.save_model(str(final))      # adapter only when LoRA, full weights otherwise
