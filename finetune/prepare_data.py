@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Build the training dataset: Google FLEURS Luxembourgish (+ optional extra manifests).
 
-FLEURS (google/fleurs, config lb_lu) is read Luxembourgish, CC-BY-4.0, about 2,500 / 400 / 930
-utterances in train / dev / test. It is the only open (commercial use allowed) Luxembourgish speech
-set we found on 22/10/2026. Mozilla Common Voice has never released a Luxembourgish locale
-(not in any scripted-speech release from 17.0 to 27.0).
+FLEURS (google/fleurs, config lb_lu) is read Luxembourgish, CC-BY-4.0: 2,502 / 408 / 934
+utterances (8.46 / 1.12 / 2.73 h) in train / dev / test. It is the only open (commercial use allowed)
+Luxembourgish speech set we found on 22/10/2026. Mozilla Common Voice has no Luxembourgish data in
+any release from 17.0 to 27.0. Sentences are stored with their HTML entities unescaped.
 
   --source fleurs   download data/lb_lu (TSVs + audio tarballs) from the Hub, no login, no loading
                     script: the TSVs and tarballs are parsed here.
