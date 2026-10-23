@@ -34,6 +34,10 @@ def merge(run: Path) -> Path:
     model.generation_config.forced_decoder_ids = None
     model.save_pretrained(merged, safe_serialization=True)
     processor.save_pretrained(merged)
+    # Recent transformers write a single processor_config.json; CTranslate2 and faster-whisper still
+    # expect the feature extractor in its own preprocessor_config.json, so write it explicitly.
+    processor.feature_extractor.save_pretrained(merged)
+    processor.tokenizer.save_pretrained(merged)
     print(f"[export] merged model in {merged}")
     return merged
 
@@ -44,7 +48,8 @@ def to_ct2(merged: Path, quantization: str) -> Path:
     out = merged.parent / f"ct2-{quantization}"
     if out.exists():
         shutil.rmtree(out)
-    TransformersConverter(str(merged), copy_files=["tokenizer.json", "preprocessor_config.json"]).convert(
+    copy = [f for f in ("tokenizer.json", "preprocessor_config.json") if (merged / f).exists()]
+    TransformersConverter(str(merged), copy_files=copy).convert(
         str(out), quantization=quantization
     )
     print(f"[export] CTranslate2 model in {out}")
@@ -59,7 +64,7 @@ def push(folder: Path, repo_id: str, card: Path | None) -> None:
     if card and card.exists():
         shutil.copy(card, folder / "README.md")
     api.upload_folder(folder_path=str(folder), repo_id=repo_id, commit_message=f"upload {folder.name}")
-    print(f"[export] pushed {folder} → https://huggingface.co/{repo_id}")
+    print(f"[export] pushed {folder} to https://huggingface.co/{repo_id}")
 
 
 def main() -> None:
