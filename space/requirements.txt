@@ -1,7 +1,10 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+--extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 gradio>=5.0
 faster-whisper>=1.1
 ctranslate2>=4.4
 huggingface_hub>=0.25
+requests>=2.31
 pyyaml>=6.0
 # Needed only to convert a plain Transformers Whisper repo to CTranslate2 on first use.
 transformers>=4.46
