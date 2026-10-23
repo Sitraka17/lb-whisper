@@ -1,5 +1,5 @@
 ---
-title: Meeting notes souverain
+title: Meeting notes LU (local)
 emoji: 🎙️
 colorFrom: gray
 colorTo: red
@@ -8,17 +8,19 @@ sdk_version: "5.9.1"
 app_file: app.py
 pinned: false
 license: mit
-short_description: Transcript, speakers and summary of a meeting. Open models, no cloud API.
+short_description: Meeting transcript, speakers, summary; open models
 ---
 
-# Meeting notes souverain
+# Meeting notes LU (local)
 
 Audio in → transcript with speakers → structured summary → `.md` / `.srt` / `.json`.
 Open models only, inference on CPU, **no call to any cloud API** at any step.
 
-Built for the Luxembourg case: a recording of a meeting about CSSF reporting, a client call
-in Luxembourgish with French and German thrown in, a WhatsApp voice note. Data that must not
-leave the building.
+Intended for recordings in Luxembourgish (meetings, calls, voice notes), and also usable in
+French, German and English with the zero-shot models. The only measured figure is the FLEURS WER of
+the fine-tuned model, on read speech; see its model card
+(`SitrakaForler/whisper-large-v3-turbo-lb`). Accuracy on real meetings, overlapping speakers and
+code-switching has not been measured.
 
 | Step | Component | Runs where |
 |---|---|---|
@@ -44,7 +46,7 @@ Or without Docker: `pip install -r requirements.txt && python app.py`.
 | `HF_TOKEN` | enables diarization (accept the pyannote model terms on the Hub first) |
 | `OLLAMA_MODEL`, `OLLAMA_HOST` | summary through a local Ollama server |
 | `LB_GGUF_REPO`, `LB_GGUF_FILE` or `LB_GGUF_PATH` | another GGUF than the default Qwen2.5-1.5B-Instruct Q4_K_M |
-| `LB_LLM_MAX_TOKENS` | length cap of the summary (default 500, ≈1 min on a 2-vCPU Space) |
+| `LB_LLM_MAX_TOKENS` | length cap of the summary (default 500) |
 | `LB_SUMMARY_BACKEND` | force `extractive`, `ollama` or `llama_cpp` |
 | `LB_MODEL_CACHE` | where converted CTranslate2 models are kept |
 
@@ -52,6 +54,5 @@ Models offered in the dropdown are listed in `models.yaml`.
 
 ## On the Space itself
 
-The hosted demo processes your file in the Space's container and deletes it with the request.
-It is a demo: for anything sensitive, run the Docker image above on your hardware. That is the
-whole point.
+The hosted demo processes your file in the Space's container. Uploaded audio and generated files
+are deleted within an hour. For sensitive recordings, run the Docker image on your own hardware.

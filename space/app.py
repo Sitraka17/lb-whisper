@@ -1,19 +1,21 @@
-"""Meeting notes souverain: audio in, minutes out, nothing leaves the machine.
+"""Meeting notes LU: audio in, minutes out, with open models and no cloud API.
 
     python app.py                      # http://127.0.0.1:7860
     HF_TOKEN=hf_... python app.py      # + speaker diarization (pyannote, gated weights)
     OLLAMA_MODEL=qwen2.5:3b python app.py   # + LLM summary via a local Ollama
 
-The same file is the Hugging Face Space. On the Space the audio is processed in the Space's
-container and discarded; for sensitive recordings run it on your own machine (Docker below).
+The same file is the Hugging Face Space. Uploaded audio and generated files are deleted within an
+hour (Gradio cache and OUT_ROOT below); for sensitive recordings run it on your own hardware (Docker).
 """
 
 from __future__ import annotations
 
-import json
 import os
+import shutil
 import sys
 import tempfile
+import threading
+import time
 from pathlib import Path
 
 import gradio as gr
@@ -28,17 +30,47 @@ MODEL_BY_LABEL = {m["label"]: m for m in MODELS}
 LANGS = {"auto": None, "lb": "lb", "fr": "fr", "de": "de", "en": "en"}
 DIARIZATION_ON = diarize.available()
 SUMMARY_BACKEND = summarize.backend()
+# Generated files live here and are purged with the same policy as Gradio's cache (delete_cache below):
+# checked every 10 minutes, anything older than an hour is removed.
+OUT_ROOT = Path(tempfile.gettempdir()) / "meeting-notes"
+PURGE_EVERY_S, MAX_AGE_S = 600, 3600
+PRIVACY = (
+    "Uploaded audio and generated files are deleted within an hour. "
+    "For sensitive recordings, run the Docker image on your own hardware."
+)
 
 INTRO = f"""
-### Meeting notes souverain
+### Meeting notes LU
 Upload a recording (meeting, WhatsApp voice note, interview). You get a transcript with speakers,
-a structured summary, and files to download. **Everything is computed here, on CPU, with open
-models; no API call to any cloud provider.** Nothing is stored after the request.
+a structured summary, and files to download. Everything is computed in this container with open
+models; no API call to any cloud provider. {PRIVACY}
 
-- Transcription: Whisper fine-tuned for Luxembourgish (`lb`), also fine in FR / DE / EN
+- Transcription: Whisper fine-tuned for Luxembourgish (`lb`); zero-shot Whisper models in the list for other languages
 - Speakers: pyannote community-1: {"**on**" if DIARIZATION_ON else "off on this instance (needs a Hugging Face token for the gated weights)"}
-- Summary: `{SUMMARY_BACKEND}` back-end {"(no LLM; key sentences and keyword-spotted actions)" if SUMMARY_BACKEND == "extractive" else "(local LLM, in this container; about a minute on CPU)"}
+- Summary: `{SUMMARY_BACKEND}` back-end {"(no LLM; key sentences and keyword-spotted actions)" if SUMMARY_BACKEND == "extractive" else "(local LLM, in this container)"}
 """
+
+
+def purge_old_outputs(root: Path = OUT_ROOT, max_age_s: float = MAX_AGE_S) -> None:
+    """Remove per-request output folders older than max_age_s."""
+    if not root.is_dir():
+        return
+    cutoff = time.time() - max_age_s
+    for folder in root.iterdir():
+        try:
+            if folder.stat().st_mtime < cutoff:
+                shutil.rmtree(folder, ignore_errors=True)
+        except FileNotFoundError:
+            pass
+
+
+def _purge_loop() -> None:
+    while True:
+        time.sleep(PURGE_EVERY_S)
+        purge_old_outputs()
+
+
+threading.Thread(target=_purge_loop, name="purge-outputs", daemon=True).start()
 
 
 def run(audio_path, model_label, language, want_speakers, num_speakers, want_summary, progress=gr.Progress()):
@@ -64,7 +96,9 @@ def run(audio_path, model_label, language, want_speakers, num_speakers, want_sum
         summary_md = summarize.to_markdown(summary, meta.get("language") or "en")
 
     md = export.to_markdown(blocks, summary_md, meta)
-    out_dir = Path(tempfile.mkdtemp(prefix="notes-"))
+    purge_old_outputs()
+    OUT_ROOT.mkdir(parents=True, exist_ok=True)
+    out_dir = Path(tempfile.mkdtemp(prefix="notes-", dir=OUT_ROOT))
     files = {
         out_dir / "meeting-notes.md": md,
         out_dir / "meeting-notes.srt": export.to_srt(blocks),
@@ -77,7 +111,7 @@ def run(audio_path, model_label, language, want_speakers, num_speakers, want_sum
     return transcript_md, summary_md or "_Summary off._", info, [str(p) for p in files]
 
 
-with gr.Blocks(title="Meeting notes souverain", analytics_enabled=False) as demo:
+with gr.Blocks(title="Meeting notes LU", analytics_enabled=False, delete_cache=(PURGE_EVERY_S, MAX_AGE_S)) as demo:
     gr.Markdown(INTRO)
     with gr.Row():
         with gr.Column(scale=1):
@@ -95,10 +129,7 @@ with gr.Blocks(title="Meeting notes souverain", analytics_enabled=False) as demo
             transcript_out = gr.Markdown(label="Transcript")
             downloads = gr.File(label="Download (.md / .srt / .json)", file_count="multiple")
     go.click(run, [audio, model_dd, lang_dd, speakers_cb, n_speakers, summary_cb], [transcript_out, summary_out, info_md, downloads])
-    gr.Markdown(
-        "Privacy: the file is processed in memory and in a temporary folder deleted with the request. "
-        "To keep recordings on your own hardware, run this app locally: `docker run -p 7860:7860 meeting-notes-lu`."
-    )
+    gr.Markdown(f"Privacy: {PRIVACY} `docker run -p 7860:7860 meeting-notes-lu`")
 
 if __name__ == "__main__":
     demo.queue(max_size=8).launch(server_name=os.environ.get("GRADIO_SERVER_NAME", "0.0.0.0"), server_port=int(os.environ.get("PORT", 7860)))

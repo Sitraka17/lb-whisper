@@ -4,13 +4,7 @@
 models:
   - label: "Whisper large-v3-turbo · Luxembourgish fine-tune (this project)"
     repo: "SitrakaForler/whisper-large-v3-turbo-lb-ct2"
-    languages: [lb, fr, de, en]
-  - label: "Whisper small · Luxembourgish fine-tune (fast, CPU)"
-    repo: "SitrakaForler/whisper-small-lb-ct2"
-    languages: [lb, fr, de, en]
   - label: "Whisper large-v3-turbo (OpenAI, zero-shot)"
     repo: "deepdml/faster-whisper-large-v3-turbo-ct2"
-    languages: [auto, lb, fr, de, en]
   - label: "Whisper small (OpenAI, zero-shot)"
     repo: "Systran/faster-whisper-small"
-    languages: [auto, lb, fr, de, en]
