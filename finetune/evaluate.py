@@ -17,6 +17,7 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
 import torch
 from datasets import load_from_disk
 from transformers import WhisperForConditionalGeneration, WhisperProcessor
@@ -31,7 +32,40 @@ def char_error_rate(refs: list[str], hyps: list[str]) -> float:
     return float(jiwer.cer([normalize(r) for r in refs], [normalize(h) for h in hyps]))
 
 
+def is_ctranslate2(model_id: str) -> bool:
+    """True for a CTranslate2 export (model.bin, no Transformers weights), local or on the Hub."""
+    local = Path(model_id)
+    if local.is_dir():
+        return (local / "model.bin").exists() and not any(local.glob("*.safetensors"))
+    from huggingface_hub import list_repo_files
+
+    files = set(list_repo_files(model_id))
+    return "model.bin" in files and not any(f.endswith((".safetensors", "pytorch_model.bin")) for f in files)
+
+
+def transcribe_ct2(model_id: str, ds, language: str, device: str, max_samples: int | None):
+    """Greedy decoding with faster-whisper, to match the Transformers path (beam 1, no VAD)."""
+    from faster_whisper import WhisperModel
+
+    model = WhisperModel(model_id, device=device, compute_type="float16" if device == "cuda" else "int8")
+    if max_samples:
+        ds = ds.select(range(min(max_samples, len(ds))))
+    refs, hyps, audio_seconds = [], [], 0.0
+    t0 = time.perf_counter()
+    for ex in ds:
+        array = np.asarray(ex["audio"]["array"], dtype=np.float32)
+        audio_seconds += len(array) / 16_000
+        segments, _ = model.transcribe(array, language=language, task="transcribe", beam_size=1,
+                                       condition_on_previous_text=False, vad_filter=False)
+        hyps.append(" ".join(seg.text.strip() for seg in segments))
+        refs.append(ex["sentence"])
+    wall = time.perf_counter() - t0
+    return refs, hyps, audio_seconds, wall
+
+
 def transcribe_dataset(model_id: str, ds, language: str, batch_size: int, device: str, max_samples: int | None):
+    if is_ctranslate2(model_id):
+        return transcribe_ct2(model_id, ds, language, device, max_samples)
     processor = WhisperProcessor.from_pretrained(model_id)
     dtype = torch.float16 if device == "cuda" else torch.float32
     model = WhisperForConditionalGeneration.from_pretrained(model_id, torch_dtype=dtype).to(device).eval()

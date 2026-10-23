@@ -64,9 +64,17 @@ def main() -> None:
             desc="degrade",
         )
 
-    rows = []
+    # Rows are written after each model x condition, and rows already in results/benchmark.json are
+    # kept and skipped: a crash on one model no longer loses the others.
+    args.results_dir.mkdir(parents=True, exist_ok=True)
+    json_path = args.results_dir / "benchmark.json"
+    rows = json.loads(json_path.read_text(encoding="utf-8")) if json_path.exists() else []
+    done = {(r["model"], r["condition"]) for r in rows}
     for model in args.models:
         for cond, data in conditions.items():
+            if (model, cond) in done:
+                print(f"[benchmark] {model} / {cond}: already in {json_path}, skipped")
+                continue
             refs, hyps, audio_s, wall = transcribe_dataset(model, data, args.language, args.batch_size, device, None)
             rows.append(
                 {
@@ -80,9 +88,9 @@ def main() -> None:
                 }
             )
             print(rows[-1])
+            json_path.write_text(json.dumps(rows, indent=2), encoding="utf-8")
 
-    args.results_dir.mkdir(parents=True, exist_ok=True)
-    (args.results_dir / "benchmark.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
+    rows = [r for m in args.models for r in rows if r["model"] == m]
     md = ["| model | condition | n | WER % | CER % | s / audio-min | device |", "|---|---|---:|---:|---:|---:|---|"]
     md += [f"| {r['model']} | {r['condition']} | {r['n']} | {r['wer']} | {r['cer']} | {r['seconds_per_audio_minute']} | {r['device']} |" for r in rows]
     (args.results_dir / "benchmark.md").write_text("\n".join(md) + "\n", encoding="utf-8")
