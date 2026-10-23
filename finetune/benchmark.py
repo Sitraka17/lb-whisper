@@ -2,9 +2,12 @@
 """Benchmark several models on the same test set, clean and WhatsApp-degraded.
 
     python benchmark.py --data data/fleurs_lb --models openai/whisper-small openai/whisper-large-v3-turbo \
-        unilux/whisper-small-v1-luxembourgish runs/turbo-lora/merged --max-samples 300
+        unilux/whisper-medium-v1-luxembourgish runs/turbo-lora/merged --max-samples 300
 
-« Degraded » re-encodes every clip through ffmpeg as 16 kbit/s mono Opus, the codec and
+The subset is the first --max-samples rows of the split (FLEURS repeats sentences across speakers,
+so it holds fewer distinct sentences than rows; fill_card.py reports how many).
+
+"Degraded" (condition whatsapp-16k) re-encodes every clip through ffmpeg as 16 kbit/s mono Opus, the codec and
 bitrate class of a WhatsApp voice note, then decodes it back to 16 kHz PCM. Same text,
 worse audio: the gap between the two columns is the robustness of each model.
 
@@ -27,13 +30,13 @@ import torch
 from datasets import load_from_disk
 
 sys.path.insert(0, str(Path(__file__).parent))
-from evaluate import char_error_rate, transcribe_dataset  # noqa: E402
+from evaluate import char_error_rate, is_ctranslate2, transcribe_dataset  # noqa: E402
 from lb_text import word_error_rate  # noqa: E402
 
 
 def degrade_whatsapp(array: np.ndarray, sr: int, bitrate: str = "16k") -> np.ndarray:
     if shutil.which("ffmpeg") is None:
-        raise SystemExit("ffmpeg is required for --degrade (apt-get install ffmpeg)")
+        raise SystemExit("ffmpeg is required for the whatsapp-16k condition (apt-get install ffmpeg), or pass --no-degrade")
     with tempfile.TemporaryDirectory() as tmp:
         src, mid, dst = Path(tmp) / "in.wav", Path(tmp) / "mid.opus", Path(tmp) / "out.wav"
         sf.write(src, array, sr)
@@ -56,6 +59,7 @@ def main() -> None:
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    gpu = torch.cuda.get_device_name(0) if device == "cuda" else None
     ds = load_from_disk(str(args.data))[args.split].select(range(args.max_samples))
     conditions = {"clean": ds}
     if not args.no_degrade:
@@ -85,6 +89,8 @@ def main() -> None:
                     "cer": round(100 * char_error_rate(refs, hyps), 2),
                     "seconds_per_audio_minute": round(60 * wall / audio_s, 2),
                     "device": device,
+                    "gpu": gpu,
+                    "backend": "faster-whisper" if is_ctranslate2(model) else "transformers",
                 }
             )
             print(rows[-1])
