@@ -44,7 +44,11 @@ def is_ctranslate2(model_id: str) -> bool:
 
 
 def transcribe_ct2(model_id: str, ds, language: str, device: str, max_samples: int | None):
-    """Greedy decoding with faster-whisper, to match the Transformers path (beam 1, no VAD)."""
+    """Greedy decoding with faster-whisper, to match the Transformers path (beam 1, no VAD).
+
+    Review note: greedy on purpose, every model gets the same decoding so the table is fair.
+    The Space decodes with beam 5 and VAD, so what people see in the app is a bit better than
+    these numbers. Good problem to have, but say it out loud when quoting a WER."""
     from faster_whisper import WhisperModel
 
     model = WhisperModel(model_id, device=device, compute_type="float16" if device == "cuda" else "int8")

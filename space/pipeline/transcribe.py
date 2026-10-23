@@ -74,6 +74,10 @@ def load(repo_or_path: str, device: str | None = None):
     return _MODELS[key]
 
 
+# Review note: language=None lets Whisper guess, and on Luxembourgish it sometimes guesses "de"
+# and starts writing German. In a meeting in Luxembourg people also switch to French mid-sentence.
+# Forcing "lb" fixes the first problem and makes the second worse. Idea to test: detect per
+# VAD chunk, keep lb unless fr/de wins clearly (probability > 0.8), and log every switch.
 def transcribe(audio_path: str, model_id: str, language: str | None = None, beam_size: int = 5) -> tuple[list[Segment], dict]:
     model = load(model_id)
     raw, info = model.transcribe(

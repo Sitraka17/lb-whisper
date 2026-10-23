@@ -37,6 +37,10 @@ def _read_fleurs_tsv(path: Path) -> list[dict]:
         return [row for row in reader if row.get("sentence")]
 
 
+# Review note: FLEURS is *read* speech, people reading Wikipedia-style sentences into a good mic.
+# Real Luxembourgish is the opposite: radio, meetings, voice notes, half the sentence in French.
+# That gap is the next thing to measure, not to guess. Plan: a small hand-checked set of
+# spontaneous speech with a clean licence (see ROADMAP.md), plugged in through --extra.
 def _dataset_from_rows(rows: list[dict], clips_dir: Path, source: str) -> Dataset:
     audio = [str(clips_dir / row["path"]) for row in rows]
     # FLEURS TSVs carry HTML entities (`&apos;`, `&quot;`, ...): store the plain text.

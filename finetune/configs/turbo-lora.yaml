@@ -9,7 +9,7 @@ output_dir: runs/turbo-lora
 
 lora:
   enabled: true
-  r: 32
+  r: 32                           # never ablated: one run at 16 and one at 64 would tell if 32 is luck
   alpha: 64
   dropout: 0.05
   target_modules: [q_proj, k_proj, v_proj, out_proj, fc1, fc2]

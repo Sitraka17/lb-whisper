@@ -69,6 +69,9 @@ def prepare_dataset(dsd, processor: WhisperProcessor, cfg: dict, max_train: int 
         batch["labels"] = processor.tokenizer(batch["sentence"]).input_ids
         return batch
 
+    # Review note: 8.5 h is tiny, and FLEURS has few speakers per language. The risk is a model that
+    # learns their voices rather than the language. Cheap thing to try next run, before hunting data:
+    # model.config.apply_spec_augment = True with mask_time_prob around 0.05. One line, one run.
     def keep(length, labels):
         return length <= max_seconds and len(labels) <= max_tokens
 

@@ -34,6 +34,10 @@ from evaluate import char_error_rate, is_ctranslate2, transcribe_dataset  # noqa
 from lb_text import word_error_rate  # noqa: E402
 
 
+# Review note: WhatsApp is one real-life condition. Two more I want in this table:
+# - "radio": 300-3400 Hz band-pass plus a quiet music bed, close to a phone-in on the radio;
+# - "meeting": a laptop mic two metres away (room impulse response + some babble).
+# Same text, same references, one extra column each. That says more than another 0.5 point on FLEURS.
 def degrade_whatsapp(array: np.ndarray, sr: int, bitrate: str = "16k") -> np.ndarray:
     if shutil.which("ffmpeg") is None:
         raise SystemExit("ffmpeg is required for the whatsapp-16k condition (apt-get install ffmpeg), or pass --no-degrade")
