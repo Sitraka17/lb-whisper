@@ -33,7 +33,7 @@ SUMMARY_BACKEND = summarize.backend()
 # Generated files live here and are purged with the same policy as Gradio's cache (delete_cache below):
 # checked every 10 minutes, anything older than an hour is removed.
 OUT_ROOT = Path(tempfile.gettempdir()) / "meeting-notes"
-PURGE_EVERY_S, MAX_AGE_S = 600, 3600
+PURGE_EVERY_S, MAX_AGE_S = 600, 3000  # checked every 10 min, so nothing outlives one hour
 PRIVACY = (
     "Uploaded audio and generated files are deleted within an hour. "
     "For sensitive recordings, run the Docker image on your own hardware."
