@@ -1,4 +1,4 @@
-from lb_text import normalize, word_error_rate
+from lb_text import normalize, strip_n_rule, word_error_rate
 
 
 def test_keeps_intra_word_apostrophe_and_diacritics():
@@ -42,3 +42,23 @@ def test_spaced_contraction_is_tokenised_differently():
     assert normalize("d' Kanner") == "d kanner"
     assert normalize("d'Kanner") == "d'kanner"
     assert word_error_rate(["d'Kanner"], ["d' Kanner"]) == 2.0
+
+
+def test_n_rule_drops_final_n_before_triggering_consonant():
+    assert strip_n_rule("mir kënnen mir et") == "mir kënne mir et"
+    assert strip_n_rule("si ginn bas") == "si gi bas"
+
+
+def test_n_rule_keeps_n_before_vowel_and_ndtzh():
+    assert strip_n_rule("kënnen ech") == "kënnen ech"
+    assert strip_n_rule("an der stad") == "an der stad"
+    assert strip_n_rule("si ginn heem") == "si ginn heem"
+    assert strip_n_rule("et ass schéin") == "et ass schéin"  # last word: nothing follows
+
+
+def test_n_rule_wer_forgives_only_the_n():
+    refs, hyps = ["Mir kënnen muer kommen."], ["mir kënne muer kommen"]
+    assert word_error_rate(refs, hyps) == 0.25
+    assert word_error_rate(refs, hyps, n_rule=True) == 0.0
+    # A real substitution still counts.
+    assert word_error_rate(["mir kënnen muer kommen"], ["mir kënne haut kommen"], n_rule=True) == 0.25

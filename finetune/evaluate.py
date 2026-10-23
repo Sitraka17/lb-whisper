@@ -111,6 +111,9 @@ def main() -> None:
         "n": len(refs),
         "audio_minutes": round(audio_s / 60, 1),
         "wer": round(100 * wer, 2),
+        # Same transcripts, Eifeler Regel disagreements forgiven. If this is far below "wer",
+        # a good part of the "errors" are a missing or extra n, not misheard words.
+        "wer_n_rule": round(100 * word_error_rate(refs, hyps, n_rule=True), 2),
         "cer": round(100 * cer, 2),
         "rtf": round(rtf, 4),
         "device": device,

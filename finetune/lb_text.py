@@ -51,11 +51,37 @@ def normalize(text: str) -> str:
     return _SPACES.sub(" ", text).strip()
 
 
-def word_error_rate(references: list[str], hypotheses: list[str]) -> float:
+# Eifeler Regel (the n-rule): a word-final -n is dropped before a word that starts with a
+# consonant other than n, d, t, z, h. "kënnen mir" is written "kënne mir", "an der" stays.
+# Speakers (and transcribers!) apply it unevenly, so a hypothesis can be "wrong" only because
+# the reference author kept or dropped one n. Real errors, but not recognition errors.
+_N_RULE_KEEP = set("aeiouyäëéèöüâêîôûndtzh")
+
+
+def strip_n_rule(text: str) -> str:
+    """Canonicalise normalised text for the n-rule: drop the final n(s) of a word whenever
+    the next word starts with a letter that triggers the rule. Applied to *both* sides of a
+    WER comparison it only forgives n-rule disagreements; any other error still counts.
+    It is deliberately lenient (it also touches "Mann" or "an"), which is fine for a
+    diagnostic metric and wrong for a headline one. Use word_error_rate(..., n_rule=True)."""
+    words = text.split()
+    out = []
+    for word, nxt in zip(words, words[1:] + [""]):
+        if len(word) > 1 and word.endswith("n") and nxt and nxt[0] not in _N_RULE_KEEP:
+            word = word.rstrip("n") or word
+        out.append(word)
+    return " ".join(out)
+
+
+def word_error_rate(references: list[str], hypotheses: list[str], n_rule: bool = False) -> float:
     """Corpus-level WER on normalised text. Uses jiwer if installed, else a small
-    Levenshtein so the tests do not need the dependency."""
+    Levenshtein so the tests do not need the dependency. n_rule=True forgives Eifeler Regel
+    disagreements (see strip_n_rule); the headline numbers keep the default, strict WER."""
     refs = [normalize(r) for r in references]
     hyps = [normalize(h) for h in hypotheses]
+    if n_rule:
+        refs = [strip_n_rule(r) for r in refs]
+        hyps = [strip_n_rule(h) for h in hyps]
     try:
         import jiwer  # type: ignore
 

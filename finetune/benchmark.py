@@ -86,6 +86,7 @@ def main() -> None:
                     "condition": cond,
                     "n": len(refs),
                     "wer": round(100 * word_error_rate(refs, hyps), 2),
+                    "wer_n_rule": round(100 * word_error_rate(refs, hyps, n_rule=True), 2),
                     "cer": round(100 * char_error_rate(refs, hyps), 2),
                     "seconds_per_audio_minute": round(60 * wall / audio_s, 2),
                     "device": device,
