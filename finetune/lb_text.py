@@ -1,7 +1,7 @@
 """Text normalisation for Luxembourgish ASR evaluation.
 
 Whisper's BasicTextNormalizer is too aggressive for Lëtzebuergesch: it splits on the
-apostrophe, so « d'Kanner » becomes « d kanner » and « n'Zäit » « n zait »-ish. WER
+apostrophe, so "d'Kanner" becomes "d kanner" and "n'Zäit" "n zait"-ish. WER
 computed that way punishes a model for correct contractions. This normaliser:
 
 - unescapes HTML entities (FLEURS sentences contain `&apos;`, `&quot;`, ...),

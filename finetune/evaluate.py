@@ -5,7 +5,7 @@
     python evaluate.py --model runs/turbo-lora/merged --data data/fleurs_lb --split test
 
 Writes results/<model-name>.<split>.json and appends a row to results/results.md so the
-« before / after » table of the model card is generated, not typed.
+"before / after" table of the model card is generated, not typed.
 """
 
 from __future__ import annotations

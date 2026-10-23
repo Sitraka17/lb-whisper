@@ -45,7 +45,7 @@ def group_turns(segments: list[dict], max_gap: float = 2.0) -> list[dict]:
 
 
 def relabel_speakers(blocks: list[dict], names: dict[str, str] | None = None) -> list[dict]:
-    """SPEAKER_00 → « Speaker 1 » (or a user-provided name map), in order of first appearance."""
+    """SPEAKER_00 → "Speaker 1" (or a user-provided name map), in order of first appearance."""
     names = dict(names or {})
     order: list[str] = []
     for b in blocks:
