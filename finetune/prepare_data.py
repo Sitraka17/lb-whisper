@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import html
 import json
 import tarfile
 from pathlib import Path
@@ -38,7 +39,8 @@ def _read_fleurs_tsv(path: Path) -> list[dict]:
 
 def _dataset_from_rows(rows: list[dict], clips_dir: Path, source: str) -> Dataset:
     audio = [str(clips_dir / row["path"]) for row in rows]
-    text = [row["sentence"].strip() for row in rows]
+    # FLEURS TSVs carry HTML entities (`&apos;`, `&quot;`, ...): store the plain text.
+    text = [html.unescape(row["sentence"]).strip() for row in rows]
     ds = Dataset.from_dict({"audio": audio, "sentence": text, "source": [source] * len(rows)})
     return ds.cast_column("audio", Audio(sampling_rate=16_000))
 
@@ -72,7 +74,7 @@ def from_manifest(path: Path) -> DatasetDict:
         ds = Dataset.from_dict(
             {
                 "audio": [str(Path(path).parent / r["audio"]) if not Path(r["audio"]).is_absolute() else r["audio"] for r in items],
-                "sentence": [r["text"].strip() for r in items],
+                "sentence": [html.unescape(r["text"]).strip() for r in items],
                 "source": [r.get("source", path.stem) for r in items],
             }
         )

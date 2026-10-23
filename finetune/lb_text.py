@@ -4,6 +4,7 @@ Whisper's BasicTextNormalizer is too aggressive for Lëtzebuergesch: it splits o
 apostrophe, so « d'Kanner » becomes « d kanner » and « n'Zäit » « n zait »-ish. WER
 computed that way punishes a model for correct contractions. This normaliser:
 
+- unescapes HTML entities (FLEURS sentences contain `&apos;`, `&quot;`, ...),
 - NFC-normalises and lower-cases,
 - unifies typographic apostrophes and hyphens,
 - keeps apostrophes and hyphens that sit *between* letters (d'Kanner, Sonndeg-Owend),
@@ -16,6 +17,7 @@ Pure Python, no dependency, importable from the Space, the training code and the
 
 from __future__ import annotations
 
+import html
 import re
 import unicodedata
 
@@ -34,6 +36,7 @@ def normalize(text: str) -> str:
     """Normalise a Luxembourgish (or French/German) transcript for WER computation."""
     if not text:
         return ""
+    text = html.unescape(text)
     text = unicodedata.normalize("NFC", text)
     for ch in _APOSTROPHES:
         text = text.replace(ch, "'")
