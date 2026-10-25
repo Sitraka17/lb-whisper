@@ -88,5 +88,7 @@ pip install pytest pyyaml && pytest -q tests
 - Model: `SitrakaForler/whisper-large-v3-turbo-lb` and the CTranslate2 export
   `SitrakaForler/whisper-large-v3-turbo-lb-ct2` on the Hugging Face Hub, published on 23/10/2026.
   Weights MIT, like the base model `openai/whisper-large-v3-turbo`.
-- Space: `huggingface.co/spaces/SitrakaForler/meeting-notes-lu` (this `space/` folder pushed as-is, not yet published).
+- Meeting-notes app: not hosted. Since October 2026 the Hugging Face Hub only hosts Gradio and Docker
+  Spaces for PRO accounts, so the app runs where it was meant to run anyway: on your machine, with Docker
+  or `python space/app.py` (see Quick start).
 - This code: MIT.
