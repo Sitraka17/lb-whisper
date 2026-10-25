@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lb-whisper in the browser</title>
+<meta name="description" content="Luxembourgish speech recognition that runs on your own computer. The audio never leaves the browser.">
+<style>
+  :root {
+    --ink: #1a1a1a; --muted: #5a5a5a; --rule: #c9c4b8; --paper: #fbfaf6; --panel: #f3f1ea;
+    --accent: #7a1f1f; --ok: #2f5d2f;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink: #e8e4da; --muted: #a9a399; --rule: #4a463f; --paper: #1b1a18; --panel: #24221f; --accent: #e08a7a; --ok: #8fc48f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.55 var(--serif); }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 8px; }
+  h1 { font-size: 30px; font-weight: normal; margin: 0 0 4px; letter-spacing: .01em; }
+  .byline { color: var(--muted); font-size: 15px; margin: 0; }
+  .abstract { border-bottom: 1px solid var(--rule); padding: 14px 0 16px; margin-bottom: 26px; font-size: 16px; }
+  .abstract b { font-variant: small-caps; letter-spacing: .04em; }
+  h2 { font-size: 19px; font-weight: normal; margin: 30px 0 10px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+  h2 .n { display: inline-block; min-width: 1.6em; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button, select, label.file {
+    font: 15px var(--serif); color: var(--ink); background: var(--panel); border: 1px solid var(--ink);
+    padding: 7px 14px; cursor: pointer; border-radius: 0;
+  }
+  button:hover:not(:disabled), label.file:hover { background: var(--ink); color: var(--paper); }
+  button:disabled, label.file[aria-disabled=true] { opacity: .45; cursor: default; pointer-events: none; }
+  button.rec { border-color: var(--accent); color: var(--accent); }
+  button.rec.on { background: var(--accent); color: var(--paper); }
+  input[type=file] { display: none; }
+  .note { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+  .status { font: 14px var(--mono); color: var(--muted); margin: 12px 0 0; min-height: 1.4em; white-space: pre-wrap; }
+  .status.err { color: var(--accent); }
+  progress { width: 100%; height: 6px; accent-color: var(--ink); margin-top: 8px; }
+  figure { margin: 18px 0 0; }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; }
+  figcaption b { color: var(--ink); font-weight: normal; font-variant: small-caps; letter-spacing: .04em; }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+  th { text-align: left; font-weight: normal; font-variant: small-caps; letter-spacing: .04em; border-bottom: 1px solid var(--ink); padding: 6px 8px; }
+  td { padding: 6px 8px; vertical-align: top; border-bottom: 1px solid var(--rule); }
+  td.t { font: 13px var(--mono); color: var(--muted); white-space: nowrap; width: 1%; padding-top: 9px; }
+  tr:last-child td { border-bottom: 0; }
+  .empty td { color: var(--muted); font-style: italic; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; font-size: 15px; margin: 0; }
+  dt { font-variant: small-caps; letter-spacing: .04em; color: var(--muted); }
+  dd { margin: 0; }
+  a { color: var(--accent); }
+  footer { margin-top: 40px; border-top: 1px solid var(--rule); padding-top: 12px; font-size: 14px; color: var(--muted); }
+  ol.fn { padding-left: 1.2em; margin: 6px 0 0; }
+  @media (max-width: 520px) { h1 { font-size: 25px; } td.t { white-space: normal; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>lb-whisper, in your browser</h1>
+    <p class="byline">Luxembourgish speech recognition · Whisper large-v3-turbo fine-tuned on FLEURS · Sitraka Forler</p>
+  </header>
+
+  <p class="abstract"><b>Abstract.</b> Record yourself or drop an audio file: the transcript is computed on this
+  computer, with the GPU of your browser. The audio is never uploaded anywhere; only the model weights are downloaded,
+  once, and then kept in the browser cache.<sup>1</sup> Trained on 8.5 h of read speech, so expect mistakes on
+  spontaneous speech, names and noisy rooms.<sup>2</sup></p>
+
+  <h2><span class="n">1</span>Model</h2>
+  <div class="row">
+    <select id="variant" aria-label="Model size">
+      <option value="q4">Compact: about 760 MB, 4-bit</option>
+      <option value="fp16">Accurate: about 1.6 GB, 16-bit encoder</option>
+    </select>
+    <button id="load">Load the model</button>
+  </div>
+  <progress id="bar" max="1" value="0" hidden></progress>
+  <p class="status" id="loadStatus"></p>
+
+  <h2><span class="n">2</span>Audio</h2>
+  <div class="row">
+    <button id="rec" class="rec" disabled>● Record</button>
+    <label class="file" id="fileLabel" aria-disabled="true">Choose a file…<input type="file" id="file" accept="audio/*,video/*" disabled></label>
+  </div>
+  <p class="note">Any length; long recordings are cut into 30-second windows. Speak Luxembourgish; French or German passages
+  will come out in Luxembourgish spelling or be skipped.</p>
+  <p class="status" id="runStatus"></p>
+
+  <h2><span class="n">3</span>Transcript</h2>
+  <figure>
+    <table>
+      <thead><tr><th>Time</th><th>Text</th></tr></thead>
+      <tbody id="out"><tr class="empty"><td></td><td>Nothing transcribed yet.</td></tr></tbody>
+    </table>
+    <figcaption><b>Table 1.</b> Transcript by 30-second window, start time in minutes and seconds.</figcaption>
+  </figure>
+  <div class="row" style="margin-top:12px">
+    <button id="copy" disabled>Copy text</button>
+    <button id="srt" disabled>Download .srt</button>
+  </div>
+
+  <h2><span class="n">4</span>About this run</h2>
+  <dl id="facts">
+    <dt>Device</dt><dd id="fDevice">not loaded</dd>
+    <dt>Weights</dt><dd id="fWeights">n/a</dd>
+    <dt>Audio</dt><dd id="fAudio">n/a</dd>
+    <dt>Time</dt><dd id="fTime">n/a</dd>
+  </dl>
+
+  <footer>
+    <ol class="fn">
+      <li>Inference runs with <a href="https://github.com/huggingface/transformers.js">transformers.js</a> on WebGPU
+        (recent Chrome, Edge or Safari). Without WebGPU it falls back to the CPU, which is much slower.</li>
+      <li>Full FLEURS test set: WER 30.15 %, CER 8.82 %. The uni.lu and ZLS models have a lower WER on our comparison;
+        see the <a href="https://huggingface.co/SitrakaForler/whisper-large-v3-turbo-lb">model card</a>.</li>
+    </ol>
+    <p>Code and training recipe: <a href="https://github.com/Sitraka17/lb-whisper">github.com/Sitraka17/lb-whisper</a> (MIT).</p>
+  </footer>
+</main>
+
+<script type="module">
+import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
+
+// ?local=1 loads the weights from ./models/ (for testing before they are on the Hub).
+const LOCAL = new URLSearchParams(location.search).has("local");
+const MODEL = "SitrakaForler/whisper-large-v3-turbo-lb-onnx";
+if (LOCAL) { env.allowRemoteModels = false; env.allowLocalModels = true; env.localModelPath = "./models/"; }
+
+const $ = (id) => document.getElementById(id);
+let asr = null, segments = [], recorder = null, chunks = [];
+
+function status(el, text, err = false) { $(el).textContent = text; $(el).classList.toggle("err", err); }
+function mmss(s) { const m = Math.floor(s / 60), r = Math.floor(s % 60); return `${m}:${String(r).padStart(2, "0")}`; }
+function srtTime(s) {
+  const ms = Math.round(s * 1000), h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60;
+  const sec = Math.floor(ms / 1000) % 60, rest = ms % 1000;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")},${String(rest).padStart(3, "0")}`;
+}
+function ready(on) {
+  $("rec").disabled = !on; $("file").disabled = !on;
+  $("fileLabel").setAttribute("aria-disabled", String(!on));
+}
+
+$("load").onclick = async () => {
+  const variant = $("variant").value;
+  const device = navigator.gpu && (await navigator.gpu.requestAdapter().catch(() => null)) ? "webgpu" : "wasm";
+  $("load").disabled = true; $("variant").disabled = true; $("bar").hidden = false;
+  const files = {};
+  const t0 = performance.now();
+  try {
+    asr = await pipeline("automatic-speech-recognition", MODEL, {
+      device,
+      dtype: { encoder_model: variant, decoder_model_merged: "q4" },
+      progress_callback: (p) => {
+        if (p.status === "progress" && p.total) {
+          files[p.file] = [p.loaded, p.total];
+          const [l, t] = Object.values(files).reduce((a, [x, y]) => [a[0] + x, a[1] + y], [0, 0]);
+          $("bar").value = l / t;
+          status("loadStatus", `Downloading ${(l / 1e6).toFixed(0)} / ${(t / 1e6).toFixed(0)} MB`);
+        }
+      },
+    });
+  } catch (e) {
+    status("loadStatus", `The model could not be loaded: ${e.message}`, true);
+    $("load").disabled = false; $("variant").disabled = false;
+    return;
+  }
+  $("bar").hidden = true;
+  status("loadStatus", `Ready in ${((performance.now() - t0) / 1000).toFixed(0)} s. Cached for the next visit.`);
+  $("fDevice").textContent = device === "webgpu" ? "WebGPU (graphics card of this computer)" : "CPU (WebAssembly), slow";
+  $("fWeights").textContent = variant === "q4" ? "4-bit encoder and decoder" : "16-bit encoder, 4-bit decoder";
+  ready(true);
+};
+
+async function decode(blob) {
+  const ctx = new AudioContext({ sampleRate: 16000 });
+  const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
+  await ctx.close();
+  if (buf.numberOfChannels === 1) return buf.getChannelData(0);
+  const out = new Float32Array(buf.length);
+  for (let c = 0; c < buf.numberOfChannels; c++) buf.getChannelData(c).forEach((v, i) => (out[i] += v / buf.numberOfChannels));
+  return out;
+}
+
+async function transcribe(blob, label) {
+  ready(false);
+  try {
+    status("runStatus", `Decoding ${label}…`);
+    const audio = await decode(blob);
+    const seconds = audio.length / 16000;
+    status("runStatus", `Transcribing ${mmss(seconds)} of audio on this computer…`);
+    const t0 = performance.now();
+    const res = await asr(audio, {
+      language: "luxembourgish", task: "transcribe",
+      chunk_length_s: 30, stride_length_s: 5, return_timestamps: true,
+    });
+    const took = (performance.now() - t0) / 1000;
+    segments = (res.chunks && res.chunks.length ? res.chunks : [{ timestamp: [0, seconds], text: res.text }])
+      .map((c) => ({ start: c.timestamp[0] ?? 0, end: c.timestamp[1] ?? seconds, text: c.text.trim() }))
+      .filter((c) => c.text);
+    render();
+    $("fAudio").textContent = `${label}, ${mmss(seconds)}`;
+    $("fTime").textContent = `${took.toFixed(1)} s, ${(took / seconds * 60).toFixed(1)} s per audio minute`;
+    status("runStatus", "Done.");
+  } catch (e) {
+    status("runStatus", `Transcription failed: ${e.message}`, true);
+  }
+  ready(true);
+}
+
+function render() {
+  const body = $("out");
+  body.replaceChildren();
+  if (!segments.length) {
+    body.innerHTML = '<tr class="empty"><td></td><td>No speech recognised.</td></tr>';
+  }
+  for (const s of segments) {
+    const tr = document.createElement("tr");
+    const t = document.createElement("td"); t.className = "t"; t.textContent = mmss(s.start);
+    const x = document.createElement("td"); x.textContent = s.text;
+    tr.append(t, x); body.append(tr);
+  }
+  $("copy").disabled = $("srt").disabled = !segments.length;
+}
+
+$("file").onchange = (e) => { const f = e.target.files[0]; if (f) transcribe(f, f.name); e.target.value = ""; };
+
+$("rec").onclick = async () => {
+  if (recorder && recorder.state === "recording") { recorder.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    chunks = [];
+    recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = (e) => chunks.push(e.data);
+    recorder.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop());
+      $("rec").classList.remove("on"); $("rec").textContent = "● Record";
+      transcribe(new Blob(chunks, { type: recorder.mimeType }), "microphone");
+    };
+    recorder.start();
+    $("rec").classList.add("on"); $("rec").textContent = "■ Stop";
+    status("runStatus", "Recording. Click Stop when you are done.");
+  } catch (e) {
+    status("runStatus", `No microphone: ${e.message}`, true);
+  }
+};
+
+$("copy").onclick = () => navigator.clipboard.writeText(segments.map((s) => s.text).join("\n"));
+$("srt").onclick = () => {
+  const srt = segments.map((s, i) => `${i + 1}\n${srtTime(s.start)} --> ${srtTime(s.end)}\n${s.text}\n`).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([srt], { type: "text/plain" }));
+  a.download = "transcript.srt"; a.click(); URL.revokeObjectURL(a.href);
+};
+</script>
+</body>
+</html>
