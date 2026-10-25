@@ -52,8 +52,8 @@ Luxembourgish on the radio, in meetings and in voice notes. Plan:
 
 - [ ] Code-switching: detect the language per VAD chunk, keep `lb` unless French or German
       wins clearly, and show the switches in the transcript.
-- [ ] Hosted demo: Gradio Spaces now need a Hugging Face PRO account. Options, cheapest first: a static
-      page that runs the small model in the browser, or one month of PRO for a launch week.
+- [x] Hosted demo without PRO: static Space, the model runs in the browser (WebGPU). 25/10/2026.
+- [ ] Browser demo: score the 4-bit weights on FLEURS, and fix the words lost at 30 s window boundaries.
 - [ ] A "send me your worst recording" page, opt-in, for the spontaneous test set in step 3.
 
 ## Things I will not do
