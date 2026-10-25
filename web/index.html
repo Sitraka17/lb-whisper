@@ -55,74 +55,202 @@
   footer { margin-top: 40px; border-top: 1px solid var(--rule); padding-top: 12px; font-size: 14px; color: var(--muted); }
   ol.fn { padding-left: 1.2em; margin: 6px 0 0; }
   @media (max-width: 520px) { h1 { font-size: 25px; } td.t { white-space: normal; } }
+  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  .lang { display: flex; gap: 2px; font-size: 14px; flex-shrink: 0; }
+  .lang button { padding: 2px 7px; font-size: 13px; letter-spacing: .05em; background: none; border-color: transparent; color: var(--muted); }
+  .lang button[aria-pressed=true] { border-color: var(--ink); color: var(--ink); }
+  .lang button:hover:not([aria-pressed=true]) { background: none; color: var(--ink); border-color: var(--rule); }
+  .lang button[aria-pressed=true]:hover { background: none; color: var(--ink); }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>lb-whisper, in your browser</h1>
-    <p class="byline">Luxembourgish speech recognition · Whisper large-v3-turbo fine-tuned on FLEURS · Sitraka Forler</p>
+    <div class="top">
+      <h1 data-t="h1">lb-whisper, in your browser</h1>
+      <nav class="lang" aria-label="Language">
+        <button data-lang="en" lang="en">EN</button>
+        <button data-lang="fr" lang="fr">FR</button>
+        <button data-lang="de" lang="de">DE</button>
+        <button data-lang="lb" lang="lb">LB</button>
+      </nav>
+    </div>
+    <p class="byline" data-t="byline">Luxembourgish speech recognition · Whisper large-v3-turbo fine-tuned on FLEURS · Sitraka Forler</p>
   </header>
 
-  <p class="abstract"><b>Abstract.</b> Record yourself or drop an audio file: the transcript is computed on this
-  computer, with the GPU of your browser. The audio is never uploaded anywhere; only the model weights are downloaded,
-  once, and then kept in the browser cache.<sup>1</sup> Trained on 8.5 h of read speech, so expect mistakes on
-  spontaneous speech, names and noisy rooms.<sup>2</sup></p>
+  <p class="abstract" data-t="abstract" data-html></p>
 
-  <h2><span class="n">1</span>Model</h2>
+  <h2><span class="n">1</span><span data-t="h2model">Model</span></h2>
   <div class="row">
     <select id="variant" aria-label="Model size">
-      <option value="q4">Compact: about 760 MB, 4-bit</option>
-      <option value="fp16">Accurate: about 1.6 GB, 16-bit encoder</option>
+      <option value="q4" data-t="optq4">Compact: about 760 MB, 4-bit</option>
+      <option value="fp16" data-t="optfp16">Accurate: about 1.6 GB, 16-bit encoder</option>
     </select>
-    <button id="load">Load the model</button>
+    <button id="load" data-t="load">Load the model</button>
   </div>
   <progress id="bar" max="1" value="0" hidden></progress>
   <p class="status" id="loadStatus"></p>
 
-  <h2><span class="n">2</span>Audio</h2>
+  <h2><span class="n">2</span><span data-t="h2audio">Audio</span></h2>
   <div class="row">
-    <button id="rec" class="rec" disabled>● Record</button>
-    <label class="file" id="fileLabel" aria-disabled="true">Choose a file…<input type="file" id="file" accept="audio/*,video/*" disabled></label>
+    <button id="rec" class="rec" disabled></button>
+    <label class="file" id="fileLabel" aria-disabled="true"><span data-t="file">Choose a file…</span><input type="file" id="file" accept="audio/*,video/*" disabled></label>
   </div>
-  <p class="note">Any length; long recordings are cut into 30-second windows. Speak Luxembourgish; French or German passages
-  will come out in Luxembourgish spelling or be skipped.</p>
+  <p class="note" data-t="note"></p>
   <p class="status" id="runStatus"></p>
 
-  <h2><span class="n">3</span>Transcript</h2>
+  <h2><span class="n">3</span><span data-t="h2out">Transcript</span></h2>
   <figure>
     <table>
-      <thead><tr><th>Time</th><th>Text</th></tr></thead>
-      <tbody id="out"><tr class="empty"><td></td><td>Nothing transcribed yet.</td></tr></tbody>
+      <thead><tr><th data-t="thTime">Time</th><th data-t="thText">Text</th></tr></thead>
+      <tbody id="out"></tbody>
     </table>
-    <figcaption><b>Table 1.</b> Transcript by 30-second window, start time in minutes and seconds.</figcaption>
+    <figcaption data-t="caption" data-html></figcaption>
   </figure>
   <div class="row" style="margin-top:12px">
-    <button id="copy" disabled>Copy text</button>
-    <button id="srt" disabled>Download .srt</button>
+    <button id="copy" data-t="copy" disabled>Copy text</button>
+    <button id="srt" data-t="srt" disabled>Download .srt</button>
   </div>
 
-  <h2><span class="n">4</span>About this run</h2>
+  <h2><span class="n">4</span><span data-t="h2run">About this run</span></h2>
   <dl id="facts">
-    <dt>Device</dt><dd id="fDevice">not loaded</dd>
-    <dt>Weights</dt><dd id="fWeights">n/a</dd>
-    <dt>Audio</dt><dd id="fAudio">n/a</dd>
-    <dt>Time</dt><dd id="fTime">n/a</dd>
+    <dt data-t="dtDevice">Device</dt><dd id="fDevice"></dd>
+    <dt data-t="dtWeights">Weights</dt><dd id="fWeights"></dd>
+    <dt data-t="dtAudio">Audio</dt><dd id="fAudio"></dd>
+    <dt data-t="dtTime">Time</dt><dd id="fTime"></dd>
   </dl>
 
   <footer>
     <ol class="fn">
-      <li>Inference runs with <a href="https://github.com/huggingface/transformers.js">transformers.js</a> on WebGPU
-        (recent Chrome, Edge or Safari). Without WebGPU it falls back to the CPU, which is much slower.</li>
-      <li>Full FLEURS test set: WER 30.15 %, CER 8.82 %. The uni.lu and ZLS models have a lower WER on our comparison;
-        see the <a href="https://huggingface.co/SitrakaForler/whisper-large-v3-turbo-lb">model card</a>.</li>
+      <li data-t="fn1" data-html></li>
+      <li data-t="fn2" data-html></li>
     </ol>
-    <p>Code and training recipe: <a href="https://github.com/Sitraka17/lb-whisper">github.com/Sitraka17/lb-whisper</a> (MIT).</p>
+    <p data-t="code" data-html></p>
   </footer>
 </main>
 
 <script type="module">
 import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
+
+const TJS = '<a href="https://github.com/huggingface/transformers.js">transformers.js</a>';
+const CARD = "https://huggingface.co/SitrakaForler/whisper-large-v3-turbo-lb";
+const GH = '<a href="https://github.com/Sitraka17/lb-whisper">github.com/Sitraka17/lb-whisper</a>';
+
+// Every visible string, per language. Status lines with numbers are functions.
+const T = {
+  en: {
+    title: "lb-whisper in the browser",
+    h1: "lb-whisper, in your browser",
+    byline: "Luxembourgish speech recognition · Whisper large-v3-turbo fine-tuned on FLEURS · Sitraka Forler",
+    abstract: "<b>Abstract.</b> Record yourself or drop an audio file: the transcript is computed on this computer, with the GPU of your browser. The audio is never uploaded anywhere; only the model weights are downloaded, once, and then kept in the browser cache.<sup>1</sup> Trained on 8.5 h of read speech, so expect mistakes on spontaneous speech, names and noisy rooms.<sup>2</sup>",
+    h2model: "Model", optq4: "Compact: about 760 MB, 4-bit", optfp16: "Accurate: about 1.6 GB, 16-bit encoder", load: "Load the model",
+    h2audio: "Audio", rec: "● Record", stop: "■ Stop", file: "Choose a file…",
+    note: "Any length; long recordings are cut into 30-second windows. Speak Luxembourgish; French or German passages will come out in Luxembourgish spelling or be skipped.",
+    h2out: "Transcript", thTime: "Time", thText: "Text",
+    caption: "<b>Table 1.</b> Transcript by 30-second window, start time in minutes and seconds.",
+    empty: "Nothing transcribed yet.", nospeech: "No speech recognised.",
+    copy: "Copy text", srt: "Download .srt",
+    h2run: "About this run", dtDevice: "Device", dtWeights: "Weights", dtAudio: "Audio", dtTime: "Time",
+    notLoaded: "not loaded", na: "n/a",
+    gpu: "WebGPU (graphics card of this computer)", cpu: "CPU (WebAssembly), slow",
+    wq4: "4-bit encoder and decoder", wfp16: "16-bit encoder, 4-bit decoder",
+    downloading: (l, t) => `Downloading ${l} / ${t} MB`,
+    ready: (s) => `Ready in ${s} s. Cached for the next visit.`,
+    loadFail: "The model could not be loaded: ",
+    decoding: (x) => `Decoding ${x}…`,
+    transcribing: (x) => `Transcribing ${x} of audio on this computer…`,
+    done: "Done.", runFail: "Transcription failed: ",
+    recording: "Recording. Click Stop when you are done.", noMic: "No microphone: ", mic: "microphone",
+    took: (s, m) => `${s} s, ${m} s per audio minute`,
+    fn1: `Inference runs with ${TJS} on WebGPU (recent Chrome, Edge or Safari). Without WebGPU it falls back to the CPU, which is much slower.`,
+    fn2: `Full FLEURS test set: WER 30.15 %, CER 8.82 %. The uni.lu and ZLS models have a lower WER on our comparison; see the <a href="${CARD}">model card</a>.`,
+    code: `Code and training recipe: ${GH} (MIT).`,
+  },
+  fr: {
+    title: "lb-whisper dans le navigateur",
+    h1: "lb-whisper, dans votre navigateur",
+    byline: "Reconnaissance de la parole en luxembourgeois · Whisper large-v3-turbo affiné sur FLEURS · Sitraka Forler",
+    abstract: "<b>Résumé.</b> Enregistrez-vous ou déposez un fichier audio : la transcription est calculée sur cet ordinateur, avec la carte graphique de votre navigateur. L'audio n'est jamais envoyé nulle part ; seuls les poids du modèle sont téléchargés, une fois, puis gardés dans le cache du navigateur.<sup>1</sup> Entraîné sur 8,5 h de parole lue : attendez-vous à des erreurs sur la parole spontanée, les noms propres et les pièces bruyantes.<sup>2</sup>",
+    h2model: "Modèle", optq4: "Compact : environ 760 Mo, 4 bits", optfp16: "Précis : environ 1,6 Go, encodeur 16 bits", load: "Charger le modèle",
+    h2audio: "Audio", rec: "● Enregistrer", stop: "■ Arrêter", file: "Choisir un fichier…",
+    note: "Toute durée ; les longs enregistrements sont découpés en fenêtres de 30 secondes. Parlez luxembourgeois ; les passages en français ou en allemand sortiront en graphie luxembourgeoise ou seront sautés.",
+    h2out: "Transcription", thTime: "Temps", thText: "Texte",
+    caption: "<b>Tableau 1.</b> Transcription par fenêtre de 30 secondes, début en minutes et secondes.",
+    empty: "Rien de transcrit pour l'instant.", nospeech: "Aucune parole reconnue.",
+    copy: "Copier le texte", srt: "Télécharger le .srt",
+    h2run: "À propos de cette transcription", dtDevice: "Matériel", dtWeights: "Poids", dtAudio: "Audio", dtTime: "Durée",
+    notLoaded: "non chargé", na: "n/d",
+    gpu: "WebGPU (carte graphique de cet ordinateur)", cpu: "Processeur (WebAssembly), lent",
+    wq4: "encodeur et décodeur 4 bits", wfp16: "encodeur 16 bits, décodeur 4 bits",
+    downloading: (l, t) => `Téléchargement ${l} / ${t} Mo`,
+    ready: (s) => `Prêt en ${s} s. Gardé en cache pour la prochaine visite.`,
+    loadFail: "Le modèle n'a pas pu être chargé : ",
+    decoding: (x) => `Décodage de ${x}…`,
+    transcribing: (x) => `Transcription de ${x} d'audio sur cet ordinateur…`,
+    done: "Terminé.", runFail: "La transcription a échoué : ",
+    recording: "Enregistrement en cours. Cliquez sur Arrêter quand vous avez fini.", noMic: "Pas de micro : ", mic: "micro",
+    took: (s, m) => `${s} s, soit ${m} s par minute d'audio`,
+    fn1: `L'inférence tourne avec ${TJS} sur WebGPU (Chrome, Edge ou Safari récents). Sans WebGPU, elle passe sur le processeur, beaucoup plus lent.`,
+    fn2: `Jeu de test FLEURS complet : WER 30,15 %, CER 8,82 %. Les modèles de l'uni.lu et du ZLS ont un WER plus bas dans notre comparaison ; voir la <a href="${CARD}">fiche du modèle</a>.`,
+    code: `Code et recette d'entraînement : ${GH} (MIT).`,
+  },
+  de: {
+    title: "lb-whisper im Browser",
+    h1: "lb-whisper, in Ihrem Browser",
+    byline: "Spracherkennung für Luxemburgisch · Whisper large-v3-turbo, auf FLEURS feinabgestimmt · Sitraka Forler",
+    abstract: "<b>Zusammenfassung.</b> Nehmen Sie sich auf oder laden Sie eine Audiodatei: Die Transkription wird auf diesem Computer berechnet, mit der Grafikkarte Ihres Browsers. Das Audio wird nirgendwohin hochgeladen; nur die Modellgewichte werden einmal heruntergeladen und dann im Browser-Cache gespeichert.<sup>1</sup> Trainiert auf 8,5 Stunden vorgelesener Sprache: Rechnen Sie mit Fehlern bei spontaner Sprache, Eigennamen und lauten Räumen.<sup>2</sup>",
+    h2model: "Modell", optq4: "Kompakt: etwa 760 MB, 4 Bit", optfp16: "Genau: etwa 1,6 GB, 16-Bit-Encoder", load: "Modell laden",
+    h2audio: "Audio", rec: "● Aufnehmen", stop: "■ Stopp", file: "Datei auswählen…",
+    note: "Beliebige Länge; lange Aufnahmen werden in 30-Sekunden-Fenster geteilt. Sprechen Sie Luxemburgisch; französische oder deutsche Passagen erscheinen in luxemburgischer Schreibweise oder werden übersprungen.",
+    h2out: "Transkript", thTime: "Zeit", thText: "Text",
+    caption: "<b>Tabelle 1.</b> Transkript pro 30-Sekunden-Fenster, Beginn in Minuten und Sekunden.",
+    empty: "Noch nichts transkribiert.", nospeech: "Keine Sprache erkannt.",
+    copy: "Text kopieren", srt: ".srt herunterladen",
+    h2run: "Zu diesem Durchlauf", dtDevice: "Gerät", dtWeights: "Gewichte", dtAudio: "Audio", dtTime: "Dauer",
+    notLoaded: "nicht geladen", na: "k. A.",
+    gpu: "WebGPU (Grafikkarte dieses Computers)", cpu: "Prozessor (WebAssembly), langsam",
+    wq4: "4-Bit-Encoder und -Decoder", wfp16: "16-Bit-Encoder, 4-Bit-Decoder",
+    downloading: (l, t) => `Download ${l} / ${t} MB`,
+    ready: (s) => `Bereit in ${s} s. Für den nächsten Besuch zwischengespeichert.`,
+    loadFail: "Das Modell konnte nicht geladen werden: ",
+    decoding: (x) => `Dekodiere ${x}…`,
+    transcribing: (x) => `Transkribiere ${x} Audio auf diesem Computer…`,
+    done: "Fertig.", runFail: "Transkription fehlgeschlagen: ",
+    recording: "Aufnahme läuft. Klicken Sie auf Stopp, wenn Sie fertig sind.", noMic: "Kein Mikrofon: ", mic: "Mikrofon",
+    took: (s, m) => `${s} s, also ${m} s pro Audiominute`,
+    fn1: `Die Inferenz läuft mit ${TJS} auf WebGPU (aktuelles Chrome, Edge oder Safari). Ohne WebGPU wird der Prozessor genutzt, was deutlich langsamer ist.`,
+    fn2: `Vollständiger FLEURS-Testsatz: WER 30,15 %, CER 8,82 %. Die Modelle der uni.lu und des ZLS haben in unserem Vergleich eine niedrigere WER; siehe die <a href="${CARD}">Modellkarte</a>.`,
+    code: `Code und Trainingsrezept: ${GH} (MIT).`,
+  },
+  lb: {
+    title: "lb-whisper am Browser",
+    h1: "lb-whisper, an Ärem Browser",
+    byline: "Spriecherkennung fir Lëtzebuergesch · Whisper large-v3-turbo, op FLEURS ugepasst · Sitraka Forler",
+    abstract: "<b>Resumé.</b> Huelt Iech op oder luet en Audio-Fichier: D'Transkriptioun gëtt op dësem Computer gerechent, mat der Grafikkaart vun Ärem Browser. Den Audio gëtt néierens eropgelueden; just d'Gewiichter vum Modell ginn eng Kéier erofgelueden an dann am Cache vum Browser gehalen.<sup>1</sup> Trainéiert op 8,5 Stonne virgeliesener Sprooch: Rechent mat Feeler bei spontaner Sprooch, bei Nimm an a Raim mat vill Kaméidi.<sup>2</sup>",
+    h2model: "Modell", optq4: "Kompakt: ongeféier 760 MB, 4 Bit", optfp16: "Méi genau: ongeféier 1,6 GB, 16-Bit-Encoder", load: "Modell lueden",
+    h2audio: "Audio", rec: "● Ophuelen", stop: "■ Stopp", file: "Fichier auswielen…",
+    note: "All Längt; laang Opnamen ginn an Fënstere vun 30 Sekonnen opgedeelt. Schwätzt Lëtzebuergesch; Passagen op Franséisch oder op Däitsch kommen a Lëtzebuerger Schreifweis eraus oder ginn iwwersprongen.",
+    h2out: "Transkriptioun", thTime: "Zäit", thText: "Text",
+    caption: "<b>Tabell 1.</b> Transkriptioun pro Fënster vun 30 Sekonnen, Ufank a Minutten a Sekonnen.",
+    empty: "Nach näischt transkribéiert.", nospeech: "Keng Sprooch erkannt.",
+    copy: "Text kopéieren", srt: ".srt eroflueden",
+    h2run: "Iwwer dës Transkriptioun", dtDevice: "Apparat", dtWeights: "Gewiichter", dtAudio: "Audio", dtTime: "Dauer",
+    notLoaded: "net gelueden", na: "keng Donnéeën",
+    gpu: "WebGPU (Grafikkaart vun dësem Computer)", cpu: "Prozessor (WebAssembly), lues",
+    wq4: "4-Bit-Encoder an -Decoder", wfp16: "16-Bit-Encoder, 4-Bit-Decoder",
+    downloading: (l, t) => `Eroflueden ${l} / ${t} MB`,
+    ready: (s) => `Prett an ${s} s. Fir déi nächste Kéier am Cache.`,
+    loadFail: "De Modell konnt net geluede ginn: ",
+    decoding: (x) => `${x} gëtt decodéiert…`,
+    transcribing: (x) => `${x} Audio gëtt op dësem Computer transkribéiert…`,
+    done: "Fäerdeg.", runFail: "D'Transkriptioun huet net geklappt: ",
+    recording: "Opnam leeft. Klickt op Stopp, wann Dir fäerdeg sidd.", noMic: "Kee Mikro: ", mic: "Mikro",
+    took: (s, m) => `${s} s, also ${m} s pro Minutt Audio`,
+    fn1: `D'Inferenz leeft mat ${TJS} op WebGPU (rezente Chrome, Edge oder Safari). Ouni WebGPU leeft se um Prozessor, an dat ass vill méi lues.`,
+    fn2: `Ganzen FLEURS-Testsaz: WER 30,15 %, CER 8,82 %. D'Modeller vun der uni.lu a vum ZLS hunn an eisem Verglach eng méi niddreg WER; kuckt d'<a href="${CARD}">Modellkaart</a>.`,
+    code: `Code an Trainingsrezept: ${GH} (MIT).`,
+  },
+};
 
 // ?local=1 loads the weights from ./models/ (for testing before they are on the Hub).
 const LOCAL = new URLSearchParams(location.search).has("local");
@@ -130,7 +258,38 @@ const MODEL = "SitrakaForler/whisper-large-v3-turbo-lb-onnx";
 if (LOCAL) { env.allowRemoteModels = false; env.allowLocalModels = true; env.localModelPath = "./models/"; }
 
 const $ = (id) => document.getElementById(id);
-let asr = null, segments = [], recorder = null, chunks = [];
+let asr = null, segments = [], recorder = null, chunks = [], variantLoaded = null, lastRun = null;
+
+function pickLang() {
+  const asked = new URLSearchParams(location.search).get("lang");
+  let saved = null;
+  try { saved = localStorage.getItem("lbw-lang"); } catch {}
+  for (const l of [asked, saved, ...navigator.languages.map((x) => x.slice(0, 2))]) if (T[l]) return l;
+  return "en";
+}
+let lang = pickLang();
+const t = (k) => T[lang][k];
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.title = t("title");
+  document.querySelectorAll("[data-t]").forEach((el) => {
+    const v = t(el.dataset.t);
+    if (el.hasAttribute("data-html")) el.innerHTML = v; else el.textContent = v;
+  });
+  document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  $("rec").textContent = recorder && recorder.state === "recording" ? t("stop") : t("rec");
+  $("fDevice").textContent = asr ? t(asr.device === "webgpu" ? "gpu" : "cpu") : t("notLoaded");
+  $("fWeights").textContent = variantLoaded ? t(variantLoaded === "q4" ? "wq4" : "wfp16") : t("na");
+  $("fAudio").textContent = lastRun ? `${lastRun.label === "mic" ? t("mic") : lastRun.label}, ${mmss(lastRun.seconds)}` : t("na");
+  $("fTime").textContent = lastRun ? t("took")(lastRun.took.toFixed(1), (lastRun.took / lastRun.seconds * 60).toFixed(1)) : t("na");
+  render();
+}
+document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => {
+  lang = b.dataset.lang;
+  try { localStorage.setItem("lbw-lang", lang); } catch {}
+  applyLang();
+}));
 
 function status(el, text, err = false) { $(el).textContent = text; $(el).classList.toggle("err", err); }
 function mmss(s) { const m = Math.floor(s / 60), r = Math.floor(s % 60); return `${m}:${String(r).padStart(2, "0")}`; }
@@ -157,21 +316,21 @@ $("load").onclick = async () => {
       progress_callback: (p) => {
         if (p.status === "progress" && p.total) {
           files[p.file] = [p.loaded, p.total];
-          const [l, t] = Object.values(files).reduce((a, [x, y]) => [a[0] + x, a[1] + y], [0, 0]);
-          $("bar").value = l / t;
-          status("loadStatus", `Downloading ${(l / 1e6).toFixed(0)} / ${(t / 1e6).toFixed(0)} MB`);
+          const [l, tot] = Object.values(files).reduce((a, [x, y]) => [a[0] + x, a[1] + y], [0, 0]);
+          $("bar").value = l / tot;
+          status("loadStatus", t("downloading")((l / 1e6).toFixed(0), (tot / 1e6).toFixed(0)));
         }
       },
     });
   } catch (e) {
-    status("loadStatus", `The model could not be loaded: ${e.message}`, true);
+    status("loadStatus", t("loadFail") + e.message, true);
     $("load").disabled = false; $("variant").disabled = false;
     return;
   }
+  asr.device = device; variantLoaded = variant;
   $("bar").hidden = true;
-  status("loadStatus", `Ready in ${((performance.now() - t0) / 1000).toFixed(0)} s. Cached for the next visit.`);
-  $("fDevice").textContent = device === "webgpu" ? "WebGPU (graphics card of this computer)" : "CPU (WebAssembly), slow";
-  $("fWeights").textContent = variant === "q4" ? "4-bit encoder and decoder" : "16-bit encoder, 4-bit decoder";
+  status("loadStatus", t("ready")(((performance.now() - t0) / 1000).toFixed(0)));
+  applyLang();
   ready(true);
 };
 
@@ -188,10 +347,10 @@ async function decode(blob) {
 async function transcribe(blob, label) {
   ready(false);
   try {
-    status("runStatus", `Decoding ${label}…`);
+    status("runStatus", t("decoding")(label === "mic" ? t("mic") : label));
     const audio = await decode(blob);
     const seconds = audio.length / 16000;
-    status("runStatus", `Transcribing ${mmss(seconds)} of audio on this computer…`);
+    status("runStatus", t("transcribing")(mmss(seconds)));
     const t0 = performance.now();
     const res = await asr(audio, {
       language: "luxembourgish", task: "transcribe",
@@ -201,12 +360,11 @@ async function transcribe(blob, label) {
     segments = (res.chunks && res.chunks.length ? res.chunks : [{ timestamp: [0, seconds], text: res.text }])
       .map((c) => ({ start: c.timestamp[0] ?? 0, end: c.timestamp[1] ?? seconds, text: c.text.trim() }))
       .filter((c) => c.text);
-    render();
-    $("fAudio").textContent = `${label}, ${mmss(seconds)}`;
-    $("fTime").textContent = `${took.toFixed(1)} s, ${(took / seconds * 60).toFixed(1)} s per audio minute`;
-    status("runStatus", "Done.");
+    lastRun = { label, seconds, took, empty: !segments.length };
+    applyLang();
+    status("runStatus", t("done"));
   } catch (e) {
-    status("runStatus", `Transcription failed: ${e.message}`, true);
+    status("runStatus", t("runFail") + e.message, true);
   }
   ready(true);
 }
@@ -215,13 +373,15 @@ function render() {
   const body = $("out");
   body.replaceChildren();
   if (!segments.length) {
-    body.innerHTML = '<tr class="empty"><td></td><td>No speech recognised.</td></tr>';
+    const tr = document.createElement("tr"); tr.className = "empty";
+    const x = document.createElement("td"); x.textContent = t(lastRun ? "nospeech" : "empty");
+    tr.append(document.createElement("td"), x); body.append(tr);
   }
   for (const s of segments) {
     const tr = document.createElement("tr");
-    const t = document.createElement("td"); t.className = "t"; t.textContent = mmss(s.start);
+    const tm = document.createElement("td"); tm.className = "t"; tm.textContent = mmss(s.start);
     const x = document.createElement("td"); x.textContent = s.text;
-    tr.append(t, x); body.append(tr);
+    tr.append(tm, x); body.append(tr);
   }
   $("copy").disabled = $("srt").disabled = !segments.length;
 }
@@ -236,15 +396,15 @@ $("rec").onclick = async () => {
     recorder = new MediaRecorder(stream);
     recorder.ondataavailable = (e) => chunks.push(e.data);
     recorder.onstop = () => {
-      stream.getTracks().forEach((t) => t.stop());
-      $("rec").classList.remove("on"); $("rec").textContent = "● Record";
-      transcribe(new Blob(chunks, { type: recorder.mimeType }), "microphone");
+      stream.getTracks().forEach((tr) => tr.stop());
+      $("rec").classList.remove("on"); $("rec").textContent = t("rec");
+      transcribe(new Blob(chunks, { type: recorder.mimeType }), "mic");
     };
     recorder.start();
-    $("rec").classList.add("on"); $("rec").textContent = "■ Stop";
-    status("runStatus", "Recording. Click Stop when you are done.");
+    $("rec").classList.add("on"); $("rec").textContent = t("stop");
+    status("runStatus", t("recording"));
   } catch (e) {
-    status("runStatus", `No microphone: ${e.message}`, true);
+    status("runStatus", t("noMic") + e.message, true);
   }
 };
 
@@ -255,6 +415,8 @@ $("srt").onclick = () => {
   a.href = URL.createObjectURL(new Blob([srt], { type: "text/plain" }));
   a.download = "transcript.srt"; a.click(); URL.revokeObjectURL(a.href);
 };
+
+applyLang();
 </script>
 </body>
 </html>
