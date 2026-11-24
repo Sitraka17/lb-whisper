@@ -1,0 +1,52 @@
+# Whisper large-v3-turbo + LoRA, same adapter as turbo-lora.yaml (v1), trained on FLEURS train plus
+# the open data read by `prepare_data.py --shards`. Never trained yet: nothing below is a result.
+# Step counts depend on the number of clips, which stats.json gives after prepare_data.py.
+run_name: turbo-lora-v2
+base_model: openai/whisper-large-v3-turbo
+language: luxembourgish
+task: transcribe
+data_dir: data/open_v2               # prepare_data.py --shards <folder> --out data/open_v2
+output_dir: runs/turbo-lora-v2
+
+data:
+  on_the_fly_features: true      # log-mel computed per batch: a stored 30 s feature matrix is 1.5 MB per clip
+  open_validation_split: validation_open
+  max_eval_samples_open: 300     # open-data validation subset during training, reported as eval_open_wer
+
+lora:
+  enabled: true
+  r: 32
+  alpha: 64
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, out_proj, fc1, fc2]
+
+spec_augment:
+  enabled: false                 # same adapter and learning rate as v1; the data is what changes
+  mask_time_prob: 0.05
+  mask_time_length: 10
+  mask_feature_prob: 0.0
+  mask_feature_length: 10
+
+train:
+  num_train_epochs: 3
+  learning_rate: 1.0e-4          # as v1
+  warmup_steps: 500              # v1: 100 of 468 steps; scaled to the longer run
+  per_device_train_batch_size: 8
+  gradient_accumulation_steps: 2 # effective batch 16, as v1
+  per_device_eval_batch_size: 8
+  fp16: true                     # T4 has no bf16; switch to bf16 on A100 / L4
+  gradient_checkpointing: true
+  eval_strategy: steps
+  eval_steps: 250                # v1: once per epoch (156 steps). 250 steps = 4,000 clips; also the most a disconnect can cost
+  save_steps: 250                # must stay a multiple of eval_steps (best checkpoint is kept)
+  logging_steps: 25
+  save_total_limit: 2            # the best on FLEURS dev and the latest
+  max_eval_samples: 400          # FLEURS dev subset during training, reported as eval_fleurs_wer (selects the best checkpoint)
+  eval_generate: true
+  generation_max_length: 448     # Whisper's decoder limit. 225 (v1) would cut the longest open validation transcripts (up to 244 tokens)
+  dataloader_num_workers: 2
+  seed: 42
+
+filters:
+  max_audio_seconds: 30.0        # Whisper cuts at 30 s: longer clips are dropped, not truncated
+  max_label_tokens: 448
