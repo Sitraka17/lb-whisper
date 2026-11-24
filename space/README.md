@@ -20,7 +20,11 @@ Intended for recordings in Luxembourgish (meetings, calls, voice notes), and als
 French, German and English with the zero-shot models. The only measured figure is the FLEURS WER of
 the fine-tuned model, on read speech; see its model card
 (`SitrakaForler/whisper-large-v3-turbo-lb`). Accuracy on real meetings, overlapping speakers and
-code-switching has not been measured.
+code-switching has not been measured. The fine-tuned model is not the most accurate Luxembourgish
+recogniser: the open uni.lu and ZLS models have a lower WER in my FLEURS comparison, and LuxASR
+reports a word error rate below 10 % (see "Where this stands" in the
+[repository README](https://github.com/Sitraka17/lb-whisper#where-this-stands)). What this app
+offers is that the recording stays on the machine that runs it.
 
 | Step | Component | Runs where |
 |---|---|---|
@@ -52,7 +56,9 @@ Or without Docker: `pip install -r requirements.txt && python app.py`.
 
 Models offered in the dropdown are listed in `models.yaml`.
 
-## On the Space itself
+## If you host it
 
-The hosted demo processes your file in the Space's container. Uploaded audio and generated files
-are deleted within an hour. For sensitive recordings, run the Docker image on your own hardware.
+I do not host this app (the repository README says why). The front matter above lets anyone deploy
+it as a Space. In that case the file is processed in the Space's container, and uploaded audio and
+generated files are deleted within an hour. For sensitive recordings, run the Docker image on your
+own hardware.

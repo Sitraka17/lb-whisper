@@ -96,6 +96,72 @@ of Speech*, 2022, [arXiv:2205.12446](https://arxiv.org/abs/2205.12446). Dataset:
 [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). Changes: HTML entities in the
 transcriptions unescaped; clips longer than 30 s removed from training.
 
+<!--
+v2 fields (FLEURS + open data). Not rendered, and not filled by fill_card.py yet: this card
+describes v1, which was trained on FLEURS only. When a v2 model exists, this block replaces the
+"Training data" table and the licence paragraph, and the opening paragraph must stop saying
+"trained only on FLEURS". The fields are written {{LIKE_THIS}} so that the v1 placeholder check
+ignores them. Every value comes from a file, none is typed by hand:
+  - clips and hours per source: stats.json of prepare_data.py (open_data[].splits.train.by_source)
+  - validation_open and held-out figures: stats.json of build_open_data.py (totals, held_out)
+  - text version: stats.json of prepare_data.py (open_data[].text_field)
+  - archive checksums: SHA256SUMS written by build_open_data.py
+
+### Training data (v2)
+
+| source | publisher | licence | split | clips | hours |
+|---|---|---|---|---:|---:|
+| Google FLEURS `lb_lu` | Google | CC-BY-4.0 | train | {{N_TRAIN_FLEURS}} | {{H_TRAIN_FLEURS}} |
+| `zls-rtl` (RTL Lëtzebuerg) | ZLS, Schreifmaschinn-Trainingsdaten - CC0 | CC0-1.0 | train | {{N_ZLS_RTL}} | {{H_ZLS_RTL}} |
+| `zls-chambre` (Chambre des Députés) | ZLS, same set | CC0-1.0 | train | {{N_ZLS_CHAMBRE}} | {{H_ZLS_CHAMBRE}} |
+| `zls-1007` (radio 100,7) | ZLS, same set | CC0-1.0 | train | {{N_ZLS_1007}} | {{H_ZLS_1007}} |
+| `zls-speakeasy` (podcast) | ZLS, same set | CC0-1.0 | train | {{N_ZLS_SPEAKEASY}} | {{H_ZLS_SPEAKEASY}} |
+| `zls-jemp-schuster` (audiobook) | ZLS, same set | CC0-1.0 | train | {{N_ZLS_JEMP_SCHUSTER}} | {{H_ZLS_JEMP_SCHUSTER}} |
+| `zls-happy-hippo` (podcast) | ZLS, same set | CC0-1.0 | train | {{N_ZLS_HAPPY_HIPPO}} | {{H_ZLS_HAPPY_HIPPO}} |
+| `zls-zls` | ZLS, same set | CC0-1.0 | train | {{N_ZLS_ZLS}} | {{H_ZLS_ZLS}} |
+| `zls-ccby` (Konterbont Magasinn) | ZLS, Schreifmaschinn-Trainingsdaten (CC-BY) | CC-BY-4.0 | train | {{N_ZLS_CCBY}} | {{H_ZLS_CCBY}} |
+| `lod-f1` (LOD example sentences, female voice) | ZLS | CC0-1.0 | train | {{N_LOD_F1}} | {{H_LOD_F1}} |
+| **total** | | | train | {{N_TRAIN_V2}} | {{H_TRAIN_V2}} |
+
+By licence in the train split: {{H_TRAIN_CC0}} h CC0-1.0, {{H_TRAIN_CCBY}} h CC-BY-4.0 (FLEURS included).
+Training text: {{TEXT_FIELD}} (`text` = ZLS verbatim transcripts, `text_normalised` = ZLS standard spelling).
+Open-data archives: {{SHARD_SHA256}} (first 12 characters of each SHA-256).
+
+Checkpoint selection: FLEURS dev ({{N_DEV}} utterances), as for v1. A second validation split made
+of whole open-data recordings ({{N_VAL_OPEN}} clips, {{MIN_VAL_OPEN}} min) is reported on its own:
+WER {{WER_VAL_OPEN}} %. The FLEURS test split was not used for training or checkpoint selection.
+
+Held out and not trained on: {{H_HELD_OUT}} h of ZLS recordings of LOD example sentences
+({{HELD_OUT_STATUS}}). Never used: the male voice of the LOD example sentences (CC BY-NC 4.0).
+
+### Attribution (v2)
+
+- FLEURS: as in "FLEURS attribution" above.
+- Zenter fir d'Lëtzebuerger Sprooch (ZLS), *Schreifmaschinn-Trainingsdaten - CC0*, 2026, CC0 1.0,
+  https://data.public.lu/fr/datasets/schreifmaschinn-trainingsdaten-cc0/. Sources named in the
+  release: RTL Lëtzebuerg, Chambre des Députés, radio 100,7, Speakeasy, Jemp Schuster, Happy Hippo, ZLS.
+- Zenter fir d'Lëtzebuerger Sprooch (ZLS), *Schreifmaschinn-Trainingsdaten (CC-BY)*, 2026,
+  https://data.public.lu/fr/datasets/schreifmaschinn-trainingsdaten-cc-by/. Required wording:
+  "© Konterbont Magasinn – Autisme Luxembourg a.s.b.l., CC BY 4.0"
+  (https://creativecommons.org/licenses/by/4.0/). Delete this line if `zls-ccby` was not used.
+- Zenter fir d'Lëtzebuerger Sprooch (ZLS), *Audioopname vun den LOD-Beispillssätz (Fraestëmm)*,
+  Lëtzebuerger Online Dictionnaire (lod.lu), 2026, CC0 1.0.
+- Changes made to the data: cut into clips of at most 30 s, re-encoded as 16 kHz mono FLAC,
+  white space in the transcripts normalised, some fragments left out (`finetune/DATA.md`).
+
+### Licence (v2)
+
+MIT, like the base model `openai/whisper-large-v3-turbo`. Training data: CC0-1.0 and CC-BY-4.0
+only; see the attributions above.
+
+### Limitations to add for v2
+
+- Most of the added speech is broadcast, parliament, podcasts and one read voice for {{H_LOD_F1}} h:
+  not meetings, not phone calls.
+- The open-data validation split is separated by recording, not by speaker.
+- Result on FLEURS: {{WER_TEST_V1}} % (v1) against {{WER_TEST}} % (v2), same split and normaliser.
+-->
+
 ## Training
 
 - LoRA r=32, alpha=64, dropout 0.05 on the q/k/v/out projections and both MLP layers of every block
