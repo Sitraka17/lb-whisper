@@ -1,0 +1,74 @@
+# Systems of the LB-Real bench.
+#
+# open:   models that can be downloaded and run locally by run_local.py.
+# online: services tested by hand; their exports go through import_hypotheses.py.
+#
+# Every open model was looked up on the Hugging Face Hub on 24/11/2026 (public API, no login):
+# the repository exists, is neither gated nor private, and the format, licence and revision below
+# are the ones the Hub returned that day. "training_data" quotes the model card; it is what decides
+# which test audio would be a leak for that model (see PROTOCOL.md, section 6).
+#
+# revision: the commit the bench runs. Change it on purpose, never by accident: run_local.py
+# downloads exactly this commit and writes it in every output row.
+
+open:
+  - name: lb-whisper-turbo
+    repo: SitrakaForler/whisper-large-v3-turbo-lb-ct2
+    revision: a3dcfbd4284274742559b93fc35db1fd2f154979
+    format: ctranslate2            # model.bin, int8
+    engine: faster-whisper
+    licence: MIT
+    base_model: openai/whisper-large-v3-turbo
+    training_data: "FLEURS lb_lu train, 8.46 h (this repository)"
+    author_of_this_bench: true     # see PROTOCOL.md, section 1
+
+  - name: zls-turbo
+    repo: ZLSCompLing/Whisper-Large-V3-Turbo-Luxembourgish
+    revision: 6a1c96631f31ad5cd112b7a93b93ffb067194513
+    format: ctranslate2            # model.bin only, no Transformers weights
+    engine: faster-whisper
+    licence: MIT
+    base_model: openai/whisper-large-v3-turbo
+    training_data: "about 75 h of Luxembourgish speech (model card); the ZLS says its Schreifmaschinn was trained on the CC0 set published on 11/11/2026"
+
+  - name: unilux-medium
+    repo: unilux/whisper-medium-v1-luxembourgish
+    revision: d7b74586752d070f0903d587d704f8bf365232af
+    format: transformers           # model.safetensors
+    engine: faster-whisper-converted   # converted locally to CTranslate2 with the bench compute type
+    licence: openmdw-1.1
+    base_model: openai/whisper-medium
+    training_data: "150+ h of Luxembourgish audio-text pairs (model card), not itemised"
+    note: "The larger LuxASR model behind the web service is closed (model card): test it as an online system."
+
+  - name: buzzasr-lb
+    repo: BuzzASR/luxembourgish
+    revision: 607d4a831250a43577819244da4cc92be6ed59b8
+    format: transformers           # model.safetensors
+    engine: transformers           # tokenizer replaced by the authors: not converted, run as the card documents
+    licence: MIT
+    base_model: openai/whisper-large-v3
+    training_data: "FLEURS and Common Voice 25.0, plus text-only data (model card)"
+    language: null                 # no language argument, as on the model card: the model predicts its
+                                   # own prompt tokens (PROTOCOL.md, section 7)
+    generate:                      # decoding documented on the model card; this beam replaces --beam-size
+      num_beams: 1
+      no_repeat_ngram_size: 3
+      repetition_penalty: 1.2
+
+  - name: whisper-turbo-zero-shot
+    repo: openai/whisper-large-v3-turbo
+    revision: 41f01f3fe87f28c78e2fbf8b568835947dd65ed9
+    format: transformers
+    engine: faster-whisper-converted
+    licence: MIT
+    base_model: null
+    training_data: "not fine-tuned for Luxembourgish; the floor every fine-tune has to beat"
+
+# Online services: nothing is asserted here about what they support. Each row is completed on the
+# day of the test (date, plan, settings, export format) and travels with the hypotheses.
+online:
+  - name: luxasr
+    url: https://luxasr.uni.lu/
+  - name: sproochmaschinn
+    url: https://sproochmaschinn.lu/
